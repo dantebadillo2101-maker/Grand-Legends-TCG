@@ -1,2 +1,1 @@
-// Grand Legends TCG - Online module placeholder.
-// Online play is intentionally disabled for the current public build.
+function openOnline(){alert("🌐 JUGAR ONLINE está temporalmente desactivado. Por ahora usa JUGAR LOCAL.")} function closeOnline(){} function createRoom(){openOnline()} function joinRoom(){openOnline()} function showJoinRoom(){openOnline()} function startOnlineMatch(){openOnline()} function setServerUrl(){return false} function copyRoomCode(){return false}

@@ -13,8 +13,7 @@ let leaderAbilityUsed=false;
 let deck=[],hand=[],aiHand=[],p1Field=[],p2Field=[],p1Grave=[],p2Grave=[],p1DonDeck=[],p2DonDeck=[],p1DonReserve=[],p2DonReserve=[];
 let p1hp=5,p2hp=5,p1shield=3,p2shield=3,p1max=3,p2max=2,p1don=3,p2don=2,p1leaderDon=0,p2leaderDon=0;
 let active=1,turn=1,gameOver=false,aiBusy=false,boost=0,customDeck=[];
-let comboP1=0,comboP2=0,comboBonusP1=0,comboBonusP2=0,collisionLeaderUsedP1=false,collisionLeaderUsedP2=false;
-let localMode="ai"; let p2AttackSelection=null; let selectedLeaderP2=LEADERS[1]||LEADERS[0]; let leaderAbilityUsedP2=false; let shadowUsedP1=false,shadowUsedP2=false; let awakenedThisTurnP1=false,awakenedThisTurnP2=false;
+let localMode="ai"; let p2AttackSelection=null; let combo=0; let comboBonus=0;
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function cloneCard(c){return {...c,rarity:c.rarity||"Común"}}
@@ -57,17 +56,18 @@ function openLeaderForLocal(){
  if(lm){renderLeaderChoices();lm.classList.add("open")}else{showGame();reset()}
 }
 function startGame(){startLocalAI()}
-function renderLeaderChoices(player=1){
+function renderLeaderChoices(){
  const box=document.getElementById('leaderChoices');if(!box)return;box.innerHTML='';
- LEADERS.forEach(l=>{const e=document.createElement('div');e.className='leader-choice';const set=l.id.startsWith('A')?'AWAKENING':l.id.startsWith('S')?'SHADOWS':l.id.startsWith('C')?'COLLISION':'ORIGINS';e.innerHTML=`<div class="leader-choice-art">${l.art}</div><h2>${l.name}</h2><div class="badge">${set} · ${l.color}</div><p>❤️ ${l.life} vidas</p><p>${l.ability}</p><button type="button">👑 Elegir líder</button>`;e.querySelector('button').onclick=()=>selectLeader(l.id,player);box.appendChild(e)});
+ LEADERS.forEach(l=>{
+  const e=document.createElement('div');e.className='leader-choice';
+  e.innerHTML=`<div class="leader-choice-art">${l.art}</div><h2>${l.name}</h2><div class="badge">${l.color}</div><p>❤️ ${l.life} vidas</p><p>${l.ability}</p><button type="button">👑 Elegir líder</button>`;
+  e.querySelector('button').onclick=()=>selectLeader(l.id);box.appendChild(e);
+ });
 }
-function selectLeader(id,player=1){
- const found=LEADERS.find(l=>l.id===id)||LEADERS[0];
- if(player===2){selectedLeaderP2=found;document.getElementById('leaderModal')?.classList.remove('open');showGame();reset();return}
- selectedLeader=found;
- const others=LEADERS.filter(l=>l.id!==found.id);aiLeader=others[Math.floor(Math.random()*Math.max(1,others.length))]||LEADERS[0];
+function selectLeader(id){
+ const found=LEADERS.find(l=>l.id===id)||LEADERS[0];selectedLeader=found;
+ aiLeader=LEADERS.filter(l=>l.id!==found.id)[Math.floor(Math.random()*Math.max(1,LEADERS.filter(l=>l.id!==found.id).length))]||LEADERS[0];
  localStorage.setItem('GLTCG_SELECTED_LEADER',selectedLeader.id);
- if(localMode==='pvp'){selectedLeaderP2=null;const lm=document.getElementById('leaderModal');if(lm){const box=document.getElementById('leaderChoices');if(box){box.innerHTML='<h2 style="grid-column:1/-1">👥 PLAYER 2: ELIGE TU LÍDER</h2>';}renderLeaderChoices(2);lm.classList.add('open');}return;}
  document.getElementById('leaderModal')?.classList.remove('open');showGame();reset();
 }
 function openDeckBuilderFromMenu(){
@@ -75,19 +75,6 @@ function openDeckBuilderFromMenu(){
  showGame();
  openDeckBuilder();
 }
-
-function openSets(){closeMainMenu();const m=document.getElementById('setsModal');if(!m)return;const box=document.getElementById('setsGrid');if(!box)return;box.innerHTML='';Object.values(GLTCG.SETS).forEach(set=>{const e=document.createElement('div');e.className='set-card';e.innerHTML='<h3>'+set.name+'</h3><p>'+set.theme+'</p><div class="set-count">🃏 '+set.cards.length+' cartas · 👑 '+set.leaders.length+' líderes</div><p>'+set.cards.map(c=>'<span class="set-badge">'+c.id+'</span>').join('')+'</p>';box.appendChild(e)});m.classList.add('open')}
-function closeSets(){document.getElementById('setsModal')?.classList.remove('open');openMainMenu()}
-function setOfCard(c){if(c&&c.id)return c.id.startsWith('A')?'AWAKENING':c.id.startsWith('S')?'SHADOWS':c.id.startsWith('C')?'COLLISION':'ORIGINS';return 'ORIGINS'}
-function showShadowStatus(){const e=document.getElementById('shadowStatus');if(e)e.textContent='P1: '+(shadowUsedP1?'✅ usada':'🟢 disponible')+' · P2: '+(shadowUsedP2?'✅ usada':'🟢 disponible')+' · Se activa cuando una carta sea derrotada.'}
-function comboValue(player){return (player===1?comboP1:comboP2)+(player===1?comboBonusP1:comboBonusP2)}
-function addCombo(player,n=1){if(player===1)comboP1+=n;else comboP2+=n;showComboStatus()}
-function comboHas(player,n){return comboValue(player)>=n}
-function showComboStatus(){const e=document.getElementById('comboStatus');if(e)e.textContent='P1: '+comboValue(1)+' · P2: '+comboValue(2)+' · Se reinicia al comenzar el siguiente turno.'}
-function applyCollisionCombo(c,player=1){if(!c||!c.combo||!comboHas(player,c.combo))return;const field=player===1?p1Field:p2Field,handRef=player===1?hand:aiHand,grave=player===1?p1Grave:p2Grave;
- if(c.comboBoost){const u=field.find(x=>x.id===c.id)||field[0];if(u)u.tempBoost=(u.tempBoost||0)+c.comboBoost+(c.combo5Boost&&comboHas(player,5)?c.combo5Boost:0)}
- switch(c.comboEffect){case'draw1':player===1?drawP1():drawP2();break;case'draw2Discard':player===1?(drawP1(),drawP1()):(drawP2(),drawP2());if(handRef.length)handRef.shift();break;case'ready':{const u=field.find(x=>x.id===c.id)||field[0];if(u)u.summoningSickness=false;break;}case'debuff500':{const f=player===1?p2Field:p1Field;if(f[0])f[0].tempBoost=(f[0].tempBoost||0)-500;break;}case'donRecover':{const d=player===1?p1DonDeck:p2DonDeck,r=player===1?p1DonReserve:p2DonReserve;if(d.length)r.push(d.pop());break;}case'boostOther500':{const u=field.find(x=>x.id!==c.id)||field[0];if(u)u.tempBoost=(u.tempBoost||0)+500;break;}case'peekTop':{const d=deck;if(d.length)log('🔭 Combo: '+d[d.length-1].name+' está arriba del mazo.');break;}case'peekHand':log('👀 Combo: mira una carta de la mano rival.');break;}
- log('💥 '+c.name+' activó Combo '+c.combo+'.');}
 function openPack(){
  saveCollection();
  if(document.getElementById("packResult"))document.getElementById("packResult").innerHTML="";
@@ -129,7 +116,7 @@ function drawP1(){if(deck.length)hand.push(deck.pop())}
 function drawP2(){if(deck.length)aiHand.push(deck.pop())}
 function drawDon(p){if(p===1&&p1DonDeck.length&&p1DonReserve.length<p1max){p1DonReserve.push(p1DonDeck.pop());return true}if(p===2&&p2DonDeck.length&&p2DonReserve.length<p2max){p2DonReserve.push(p2DonDeck.pop());return true}return false}
 function payP1(n){if(p1DonReserve.length<n)return false;for(let i=0;i<n;i++)p1DonReserve.pop();p1don=p1DonReserve.length;return true}
-function totalPower(c){let n=c.power+(c.attached||0)*500+(c.tempBoost||0);if(selectedLeader?.id==='L03'&&(c.attached||0)>=2)n+=300;if(selectedLeaderP2?.id==='L03'&&p2Field.includes(c)&&(c.attached||0)>=2)n+=300;if(selectedLeaderP2?.id==='S04'&&c._returnedFromGrave)n+=300;if(selectedLeader?.id==='S04'&&c._returnedFromGrave)n+=300;if(selectedLeader?.id==='C43'&&(c.attached||0)>=2)n+=300;if(selectedLeaderP2?.id==='C43'&&p2Field.includes(c)&&(c.attached||0)>=2)n+=300;return n}
+function totalPower(c){return c.power+(c.attached||0)*500+(c.tempBoost||0)}
 
 function makeDonToken(i){
  const d=document.createElement("div");d.className="doncard";d.textContent="🪙";d.draggable=true;d.title="Arrastra este DON";
@@ -300,7 +287,7 @@ function render(){
  setText("p1don",p1DonReserve.length);setText("p2don",p2DonReserve.length);
  setText("p1max",p1max);setText("p2max",p2max);
  setText("p1hand",hand.length);setText("p2hand",aiHand.length);const p2t=document.getElementById("p2Title");if(p2t)p2t.textContent=localMode==="pvp"?"👥 PLAYER 2 — LOCAL":"🤖 PLAYER 2 — IA";
- setText("p1grave",p1Grave.length);setText("p2grave",p2Grave.length);showComboStatus();
+ setText("p1grave",p1Grave.length);setText("p2grave",p2Grave.length);
  setText("p1leaderPower",5000+p1leaderDon*500);
  setText('arenaP1Power',5000+p1leaderDon*500);
  setText("turnText",gameOver?"PARTIDA TERMINADA":"TURNO DE "+(active===1?"PLAYER 1":"PLAYER 2"));
@@ -340,56 +327,27 @@ function chooseEnemyIndex(maxPower=Infinity){
  let candidates=p2Field.map((c,i)=>({c,i})).filter(x=>totalPower(x.c)<=maxPower);
  return (candidates.length?candidates:p2Field.map((c,i)=>({c,i}))).sort((a,b)=>totalPower(a.c)-totalPower(b.c))[0]?.i ?? -1;
 }
+function comboAction(){combo++;return combo;}
+function comboHas(n){return combo>=n;}
+function addCombo(n){combo=Math.max(0,combo+n);log('⚡ COMBO '+combo+'!');}
+function applyCollisionEffect(c){
+ const e=c.effect||'';
+ if(e==='comboPlus1')addCombo(1); else if(e==='comboPlus2')addCombo(2); else if(e==='comboPlus3')addCombo(3);
+ else if(e==='comboDraw'){drawP1();if(comboHas(3)){drawP1();if(hand.length){hand.shift();log('⚡ Combo 3: robaste otra y descartaste 1.')}}}
+ else if(e==='comboDraw2Discard'){drawP1();if(comboHas(3)){drawP1();if(hand.length)hand.shift();log('⚡ Combo 3: robaste 2 y descartaste 1.')}}
+ else if(e==='comboEvent800'){boost+=500;if(comboHas(2))boost+=300;log('💥 Primer Impacto aplicó su bono de Combo.')}
+ else if(e==='comboEventReady'){boost+=1000;if(comboHas(3)&&p1Field.length)p1Field[0].summoningSickness=false}
+ else if(e==='comboEvent1500'){boost+=1500;log('💥 Colisión Suprema: +1500 preparado.')}
+ else if(e==='comboKO'){let lim=comboHas(5)?2500:1800;let i=chooseEnemyIndex(lim);if(i>=0){p1Grave.push(p2Field.splice(i,1)[0]);log('💥 Cadena Destructiva derrotó a un enemigo.')}}
+ else if(e==='comboFinal'){let i=chooseEnemyIndex();if(i>=0){p2Field[i].tempBoost=(p2Field[i].tempBoost||0)-1500;if(comboHas(4)&&totalPower(p2Field[i])<=1500){p1Grave.push(p2Field.splice(i,1)[0]);log('💥 Impacto Final remató al enemigo.')}}}
+ else if(e==='stormCombo'){p2Field.forEach(x=>x.tempBoost=(x.tempBoost||0)-700);if(comboHas(5))p2Field.forEach(x=>x.disabledThisTurn=true)}
+ else if(e==='legendCombo'){boost+=2000;log('👑 Golpe de la Leyenda: +2000.')}
+ else if(e==='boost500'){boost+=500}
+ else if(e==='draw3Discard'){drawP1();drawP1();drawP1();if(hand.length)hand.shift()}
+ else if(e==='donRecover2'){for(let i=0;i<2&&p1DonDeck.length;i++)p1DonReserve.push(p1DonDeck.pop());p1don=p1DonReserve.length}
+ else if(e==='legendResource'){drawP1();drawP1();drawP1();drawP1();for(let i=0;i<2&&p1DonDeck.length;i++)p1DonReserve.push(p1DonDeck.pop());p1don=p1DonReserve.length}
+}
 
-function graveFor(player){return player===1?p1Grave:p2Grave}
-function handFor(player){return player===1?hand:aiHand}
-function fieldFor(player){return player===1?p1Field:p2Field}
-function donReserveFor(player){return player===1?p1DonReserve:p2DonReserve}
-function donDeckFor(player){return player===1?p1DonDeck:p2DonDeck}
-function rollShadows(player, defeatedName){
- const used=player===1?shadowUsedP1:shadowUsedP2;
- if(used||gameOver)return;
- const wants=confirm((player===1?'🌑 PLAYER 1':'🌑 PLAYER 2')+' puede activar SOMBRAS DEL INFIERNO porque '+defeatedName+' fue derrotado. ¿Lanzar el dado?');
- if(!wants)return;
- if(player===1)shadowUsedP1=true;else shadowUsedP2=true;
- const roll=1+Math.floor(Math.random()*6);log('🎲 Sombras del Infierno — '+(player===1?'P1':'P2')+' sacó '+roll+'.');
- if(roll%2===1){log('🌑 No ocurre nada.');showShadowStatus();return;}
- const all=[...p1Grave.map((c,i)=>({c,i,p:1})),...p2Grave.map((c,i)=>({c,i,p:2}))];
- if(!all.length){log('🌑 No hay cartas en ningún cementerio.');showShadowStatus();return;}
- const list=all.map((x,n)=>(n+1)+'. '+x.c.name+' ['+x.c.id+']').join('\n');const choice=Number(prompt('🌑 Elige 1 carta de cualquier cementerio:\n'+list));
- const picked=all[choice-1];if(!picked){log('🌑 No se eligió una carta válida.');showShadowStatus();return;}
- const arr=graveFor(picked.p);const card=arr.splice(picked.i,1)[0];handFor(picked.p).push(card);card._returnedFromGrave=true;log('🌑 Sombras del Infierno: '+card.name+' vuelve a la mano de P'+picked.p+'.');showShadowStatus();render();
-}
-function notifyDefeat(card,ownerPlayer){
- if(!card)return;
- applyOnKO(card,ownerPlayer);
- const defeatedName=card.name;
- if(ownerPlayer===1 && localMode==='pvp') rollShadows(1,defeatedName);
- if(ownerPlayer===2) rollShadows(2,defeatedName);
- const f1=p1Field,f2=p2Field;
- const triggerTargets=ownerPlayer===1?f1:f2;
- triggerTargets.forEach(c=>{if(c.onAllyKO)c.tempBoost=(c.tempBoost||0)+c.onAllyKO;if(c.onAllyKOPermanent)c.power=(c.power||0)+c.onAllyKOPermanent;});
- const leader=ownerPlayer===1?selectedLeader:selectedLeaderP2;if(leader?.id==='S04'&&ownerPlayer===1&&card._returnedFromGrave){} if(leader?.id==='A04'&&ownerPlayer===2&&!leaderAbilityUsedP2&&donDeckFor(2).length){donReserveFor(2).push(donDeckFor(2).pop());leaderAbilityUsedP2=true;log('🌑 Nyx recupera 1 DON usado.');}
-}
-function triggerAwakening(c,player=1,force=false){
- if(!c||!c.awakening||c.awakened)return false;
- const info=c.awakening;const don=donReserveFor(player).length;let ok=force||info.kind==='self'||(info.kind==='don'&&don>=info.value);
- if(!ok)return false;
- c.awakened=true; if(player===1)awakenedThisTurnP1=true;else awakenedThisTurnP2=true; log('✨ '+c.name+' DESPERTÓ.');
- if(info.boost)c.tempBoost=(c.tempBoost||0)+info.boost;
- if(info.draw){for(let i=0;i<info.draw;i++)player===1?drawP1():drawP2()}
- if(info.kind==='ko1500'){const f=fieldFor(player===1?2:1),idx=f.findIndex(x=>totalPower(x)<=1500);if(idx>=0)graveFor(player===1?2:1).push(f.splice(idx,1)[0]);}
- if(info.kind==='draw2Discard'){player===1?(drawP1(),drawP1()):(drawP2(),drawP2());const h=handFor(player);if(h.length)h.shift()}
- if(info.kind==='ready')c.summoningSickness=false;
- if(info.kind==='clearEnemyTemp'){const f=fieldFor(player===1?2:1);if(f.length)f[0].tempBoost=0}
- if(info.kind==='bounceCost4x2'){const f=fieldFor(player===1?2:1),gr=graveFor(player===1?2:1),h=handFor(player===1?2:1);for(let n=0;n<2;n++){const idx=f.findIndex(x=>x.cost<=4);if(idx<0)break;h.push(f.splice(idx,1)[0])}}
- if(info.kind==='draw3'){for(let i=0;i<3;i++)player===1?drawP1():drawP2()}
- // leader reaction
- const leader=player===1?selectedLeader:selectedLeaderP2;
- if(leader&&leader.id==='A01'){c.tempBoost=(c.tempBoost||0)+500;log('✨ Aeron: +500 por Despertar.');}
- return true;
-}
-function activateAvailableAwakening(player,c,force=false){return triggerAwakening(c,player,force)}
 function applyCardEffect(c){
  const e=c.effect||c.onPlay;
  if(e==='draw'){drawP1();log('🎴 Robaste 1 carta.');}
@@ -413,36 +371,29 @@ function applyCardEffect(c){
  else if(e==='team300'){p1Field.forEach(x=>x.tempBoost=(x.tempBoost||0)+300);log('🚩 Todos tus personajes ganan +300.');}
  else if(e==='donRecover'){if(p1DonDeck.length){p1DonReserve.push(p1DonDeck.pop());p1don=p1DonReserve.length;log('🪙 Recuperaste 1 DON a la reserva.');}}
 }
-function applyOnKO(c,ownerPlayer=1){
- if(c.onKO==='draw2'){ownerPlayer===1?(drawP1(),drawP1()):(drawP2(),drawP2());log('💀 '+c.name+': robaste 2 cartas.');}
- else if(c.onKO==='healshield'){if(ownerPlayer===1&&p1shield<5)p1shield++;if(ownerPlayer===2&&p2shield<5)p2shield++;}
- else if(c.onKO==='donRecover'){if(donDeckFor(ownerPlayer).length)donReserveFor(ownerPlayer).push(donDeckFor(ownerPlayer).pop());}
- else if(c.onKO==='recover2'){const gr=graveFor(ownerPlayer),h=handFor(ownerPlayer);for(let i=0;i<2&&gr.length;i++)h.push(gr.pop());}
- else if(c.onKO==='returnSelf'){handFor(ownerPlayer).push(c);log('🌑 '+c.name+' volvió a la mano.');}
- else if(c.onKO==='peekTop'){const d=deck;if(d.length)log('👁️ '+d[d.length-1].name+' está en la parte superior del mazo.');}
- else if(c.onKO==='returnSelfIfAwakened'&&c.awakened)handFor(ownerPlayer).push(c);
-}
-function cardPowerBonus(c){let n=0;if(c.onPlay==='beastBonus'&&(c.attached||0)>=2)n+=300;if(c.onPlay==='kingBonus'&&p1Field.length>=2)n+=500;if(c.onPlay==='legendBonus'&&p1shield<=1)n+=700;if(c.onPlay==='legendFieldBonus'&&p1Field.length>=2)n+=600;if(c.onPlay==='graveBonus300'&&p1Grave.length>=3)n+=300;if(c.onPlay==='graveBonus500'&&p1Grave.length>=7)n+=500;if(c.onPlay==='handGap500'&&hand.length<aiHand.length)n+=500;if(c.onPlay==='deathBoost700'&&((p1Grave.length+p2Grave.length)>0))n+=700;if(c.onPlay==='donPower500'&&p1DonReserve.length>=3)n+=500;if(c.onPlay==='awakenedBonus'&&p1Field.some(x=>x.awakened))n+=200;return n;}
+function applyOnKO(c){if(c.onKO==='draw2'){drawP1();drawP1();log('💀 Último Aliento: robaste 2 cartas.');}else if(c.onKO==='healshield'){if(p1shield<5){p1shield++;log('💀 Último Aliento: recuperaste 1 escudo.');}}}
+function cardPowerBonus(c){let n=0;if(c.onPlay==='beastBonus'&&(c.attached||0)>=2)n+=300;if(c.onPlay==='kingBonus'&&p1Field.length>=2)n+=500;if(c.onPlay==='legendBonus'&&p1shield<=1)n+=700;if(c.onPlay==='legendFieldBonus'&&p1Field.length>=2)n+=600;return n;}
 function playCard(i){
- if(!canPlay())return;let c=hand[i];if(!c)return;if(!payP1(c.cost)){log('❌ No tienes suficientes DON.');return}
- hand.splice(i,1);addCombo(1,1);log('🎴 Jugaste '+c.name+'.');
- if(selectedLeader.id==='L02'&&c.type==='Evento'&&!leaderAbilityUsed){drawP1();leaderAbilityUsed=true;log('🌌 Lyra: robaste 1 carta por jugar un Evento.');}
- if(c.type==='Evento'||c.type==='Recurso'){applyCardEffect(c);applyCollisionCombo(c,1);}
- else{let u=cloneCard(c);u.attached=0;u.tempBoost=boost;u.used=false;u.summoningSickness=true;u.basePower=u.power;u.awakened=false;u.tempBoost=(u.tempBoost||0)+cardPowerBonus(u);p1Field.push(u);applyCardEffect(c);if(u.awakening)triggerAwakening(u,1,false);applyCollisionCombo(u,1);}
+ if(!canPlay())return;let c=hand[i];if(!payP1(c.cost)){log('❌ No tienes suficientes DON.');return}
+ hand.splice(i,1);comboAction();log('🎴 Jugaste '+c.name+'. ⚡ Combo '+combo);
+ if(selectedLeader.id==='L02' && c.type==='Evento' && !leaderAbilityUsed){drawP1();leaderAbilityUsed=true;log('🌌 Lyra: robaste 1 carta por jugar un Evento.');}
+ if(c.type==='Evento'||c.type==='Recurso'){applyCardEffect(c);if(c.set==='COLLISION')applyCollisionEffect(c);}
+ else{let u=cloneCard(c);u.attached=0;u.tempBoost=boost;u.used=false;u.summoningSickness=true;boost=0;u.basePower=u.power;u.tempBoost=(u.tempBoost||0)+cardPowerBonus(u);p1Field.push(u);applyCardEffect(c);if(c.set==='COLLISION')applyCollisionEffect(c);}
  checkWin();render()
 }
 function damageShield(player,n){
- if(player===1){let k=Math.min(n,p1shield);p1shield-=k;p1hp=Math.max(0,p1hp-(n-k));log("💥 P1 perdió "+k+" escudo(s).")}
+ if(player===1){let k=Math.min(n,p1shield);p1shield-=k;p1hp=Math.max(0,p1hp-(n-k));log("💥 P2 perdió "+k+" escudo(s).")}
  else{let k=Math.min(n,p2shield);p2shield-=k;p2hp=Math.max(0,p2hp-(n-k));log("💥 P2 perdió "+k+" escudo(s).")}
 }
 function chooseAttack(i){chooseArenaAttack(i)}
 function attackCharacter(i,j){
  let a=p1Field[i],t=p2Field[j];if(!a||!t)return;if(a.summoningSickness){log('⏳ Este personaje acaba de entrar y no puede atacar todavía.');return;}
- addCombo(1,1);if(selectedLeader.id==='L01'&&!leaderAbilityUsed){a.tempBoost=(a.tempBoost||0)+500;leaderAbilityUsed=true;log('🌅 Kael activa su habilidad: +500 poder este combate.');}if(selectedLeader.id==='C41'&&comboHas(1,2)&&!collisionLeaderUsedP1){a.tempBoost=(a.tempBoost||0)+500;collisionLeaderUsedP1=true;log('💥 Raze: +500 por Combo 2.');}
- let ap=totalPower(a),tp=totalPower(t);if(a.attackBoost)ap+=a.attackBoost;log('⚔️ '+a.name+' ('+ap+') ataca a '+t.name+' ('+tp+').');
- if(ap>tp){const defeated=p2Field.splice(j,1)[0];p2Grave.push(defeated);log('💥 '+t.name+' fue KO. '+a.name+' sobrevive.');notifyDefeat(defeated,2);if(selectedLeader.id==='S03'&&!leaderAbilityUsed){a.tempBoost=(a.tempBoost||0)+700;leaderAbilityUsed=true;log('🔥 Drazek: +700 por derrotar un personaje.')}}
- else if(ap<tp){const defeated=p1Field.splice(i,1)[0];p1Grave.push(defeated);log('💀 '+a.name+' fue KO. '+t.name+' sobrevive.');notifyDefeat(defeated,1)}
- else{const d2=p2Field.splice(j,1)[0],d1=p1Field.splice(i,1)[0];p2Grave.push(d2);p1Grave.push(d1);log('💥 Empate: ambos personajes fueron KO.');notifyDefeat(d2,2);notifyDefeat(d1,1)}
+ if(selectedLeader.id==='L01'&&!leaderAbilityUsed){a.tempBoost=(a.tempBoost||0)+500;leaderAbilityUsed=true;log('🌅 Kael activa su habilidad: +500 poder este combate.');}
+  if(selectedLeader.id==='C41'&&comboHas(2)&&!leaderAbilityUsed){a.tempBoost=(a.tempBoost||0)+500;leaderAbilityUsed=true;log('💥 Raze: Combo 2 → +500 este combate.');}
+ let ap=totalPower(a),tp=totalPower(t);log("⚔️ "+a.name+" ("+ap+") ataca a "+t.name+" ("+tp+").");
+ if(ap>tp){p2Grave.push(p2Field.splice(j,1)[0]);log("💥 "+t.name+" fue KO. "+a.name+" sobrevive.");}
+ else if(ap<tp){p1Grave.push(p1Field.splice(i,1)[0]);log("💀 "+a.name+" fue KO. "+t.name+" sobrevive.");}
+ else{p2Grave.push(p2Field.splice(j,1)[0]);p1Grave.push(p1Field.splice(i,1)[0]);log("💥 Empate: ambos personajes fueron KO.");}
  checkWin();render()
 }
 function attackLeader(){
@@ -464,19 +415,27 @@ function activateAbility(i){
 
 function payP2(n){if(p2DonReserve.length<n)return false;for(let i=0;i<n;i++)p2DonReserve.pop();p2don=p2DonReserve.length;return true}
 function playCardP2(i){
- if(localMode!=='pvp'||active!==2||gameOver)return;let c=aiHand[i];if(!c)return;if(!payP2(c.cost)){log('❌ PLAYER 2 no tiene suficientes DON.');return}
- aiHand.splice(i,1);log('🎴 PLAYER 2 jugó '+c.name+'.');
- if(c.type==='Evento'||c.type==='Recurso'){
-  const e=c.effect;
-  if(e==='draw')drawP2();else if(e==='draw2'){drawP2();drawP2()}else if(e==='draw3'){drawP2();drawP2();drawP2()}
-  else if(e==='healshield'&&p2shield<5)p2shield++;else if(e==='break2')damageShield(2,1);else if(e==='ko1500'&&p1Field.length){const ix=p1Field.findIndex(x=>totalPower(x)<=1500);if(ix>=0){const d=p1Field.splice(ix,1)[0];p1Grave.push(d);notifyDefeat(d,1)}}
-  else if(e==='bounce1000'&&p1Field.length){const ix=p1Field.findIndex(x=>totalPower(x)<=1000);if(ix>=0)aiHand.push(p1Field.splice(ix,1)[0])}
-  else if(e==='recover'&&p2Grave.length)aiHand.push(p2Grave.pop());else if(e==='recover3'){const ix=p2Grave.findIndex(x=>x.cost<=3);if(ix>=0)aiHand.push(p2Grave.splice(ix,1)[0])}
-  else if(e==='debuff700'&&p1Field.length)p1Field[0].tempBoost=(p1Field[0].tempBoost||0)-700;else if(e==='debuff300'&&p1Field.length)p1Field[0].tempBoost=(p1Field[0].tempBoost||0)-300;
-  else if(e==='sacrificeDraw2'&&p2Field.length){const d=p2Field.shift();p2Grave.push(d);notifyDefeat(d,2);drawP2();drawP2()}
-  else if(e==='recoverCost2'&&p2Grave.length){const ix=p2Grave.findIndex(x=>x.cost<=2);if(ix>=0)aiHand.push(p2Grave.splice(ix,1)[0])}
-  else if(e==='recoverCost4x2'){for(let n=0;n<2;n++){const ix=p2Grave.findIndex(x=>x.cost<=4);if(ix<0)break;aiHand.push(p2Grave.splice(ix,1)[0])}}
- } else {let u=cloneCard(c);u.attached=0;u.tempBoost=0;u.used=false;u.summoningSickness=true;u.basePower=u.power;u.awakened=false;u.tempBoost+=cardPowerBonus(u);p2Field.push(u);if(u.awakening)triggerAwakening(u,2,false)}
+ if(localMode!=="pvp"||active!==2||gameOver)return;
+ let c=aiHand[i];if(!c)return;
+ if(!payP2(c.cost)){log("❌ PLAYER 2 no tiene suficientes DON.");return}
+ aiHand.splice(i,1);log("🎴 PLAYER 2 jugó "+c.name+".");
+ if(c.type==="Evento"||c.type==="Recurso"){
+   if(c.effect==="draw")drawP2();
+   else if(c.effect==="draw2"){drawP2();drawP2()}
+   else if(c.effect==="draw3"){drawP2();drawP2();drawP2()}
+   else if(c.effect==="healshield"&&p2shield<5)p2shield++;
+   else if(c.effect==="break2")damageShield(2,2);
+   else if(c.effect==="ko1500"&&p1Field.length)p2Grave.push(p1Field.shift());
+   else if(c.effect==="bounce1000"&&p1Field.length){
+      let ix=p1Field.findIndex(x=>totalPower(x)<=1000);
+      if(ix>=0)aiHand.push(p1Field.splice(ix,1)[0]);
+   } else if(c.effect==="debuff700"&&p1Field.length)p1Field[0].tempBoost=(p1Field[0].tempBoost||0)-700;
+   else if(c.effect==="debuff300"&&p1Field.length)p1Field[0].tempBoost=(p1Field[0].tempBoost||0)-300;
+   else if(c.effect==="recover"&&p2Grave.length)aiHand.push(p2Grave.pop());
+   else if(c.effect==="ready"&&p2Field.length)p2Field[0].summoningSickness=false;
+ } else {
+   let u=cloneCard(c);u.attached=0;u.tempBoost=0;u.used=false;u.summoningSickness=true;u.basePower=u.power;p2Field.push(u);
+ }
  checkWin();render()
 }
 function chooseArenaAttackP2(i){
@@ -487,15 +446,17 @@ function chooseArenaAttackP2(i){
  arenaLog("🎯 PLAYER 2 elige objetivo de "+p2Field[i].name+".")
 }
 function attackCharacterP2(i,j){
- let a=p2Field[i],t=p1Field[j];if(!a||!t||a.summoningSickness)return;let ap=totalPower(a)+(a.attackBoost||0),tp=totalPower(t);log('⚔️ PLAYER 2: '+a.name+' ('+ap+') ataca a '+t.name+' ('+tp+').');
- if(ap>tp){const d=p1Field.splice(j,1)[0];p1Grave.push(d);log('💥 '+d.name+' fue KO.');notifyDefeat(d,1);if(selectedLeaderP2?.id==='S03'&&!leaderAbilityUsedP2){a.tempBoost=(a.tempBoost||0)+700;leaderAbilityUsedP2=true;}}
- else if(ap<tp){const d=p2Field.splice(i,1)[0];p2Grave.push(d);log('💥 '+d.name+' fue KO.');notifyDefeat(d,2)}
- else{const d1=p1Field.splice(j,1)[0],d2=p2Field.splice(i,1)[0];p1Grave.push(d1);p2Grave.push(d2);log('💥 Empate: ambos personajes fueron KO.');notifyDefeat(d1,1);notifyDefeat(d2,2)}
+ let a=p2Field[i],t=p1Field[j];if(!a||!t||a.summoningSickness)return;
+ let ap=totalPower(a),tp=totalPower(t);log("⚔️ PLAYER 2: "+a.name+" ("+ap+") ataca a "+t.name+" ("+tp+").");
+ if(ap>tp){p1Grave.push(p1Field.splice(j,1)[0]);log("💥 "+t.name+" fue KO.")}
+ else if(ap<tp){p2Grave.push(p2Field.splice(i,1)[0]);log("💥 "+a.name+" fue KO.")}
+ else{p1Grave.push(p1Field.splice(j,1)[0]);p2Grave.push(a);log("💥 Empate: ambos personajes fueron KO.")}
  checkWin();render()
 }
 function attackLeaderP2(){
  if(localMode!=="pvp"||active!==2||gameOver)return;
- if(p1shield>0){p1shield--;log("👑 PLAYER 2 atacó al Líder y rompió 1 🛡️.")}else{p1hp=Math.max(0,p1hp-1);log("👑 PLAYER 2 dañó al Líder por 1 ❤️.")}
+ if(p1shield>0){p1shield--;log("👑 PLAYER 2 atacó al Líder y rompió 1 🛡️.")}
+ else{p1hp=Math.max(0,p1hp-1);log("👑 PLAYER 2 dañó al Líder por 1 ❤️.")}
  checkWin();render()
 }
 
@@ -521,22 +482,22 @@ async function aiTurn(){ if(localMode==="pvp")return;
  aiBusy=true;if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🟡 Robando carta...";setAIRealtime("Robando carta...");arenaLog("🤖 P2 roba una carta.");render();await delay(1000);drawP2();drawDon(2);p2don=p2DonReserve.length;p2max=Math.min(10,p2max+1);
  if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🟡 Analizando...";setAIRealtime("Pensando su jugada...");render();await delay(1300);
  let choices=aiHand.filter(c=>c.cost<=p2DonReserve.length).sort((a,b)=>(b.power||0)-(a.power||0));
- if(choices.length){let c=choices[0],idx=aiHand.indexOf(c);for(let k=0;k<c.cost;k++)p2DonReserve.pop();p2don=p2DonReserve.length;aiHand.splice(idx,1);addCombo(2,1);if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🟠 Jugando "+c.name+"...";setAIRealtime("Jugando "+c.name+"...");arenaLog("🃏 P2 juega "+c.name+".");render();await delay(1200);
-  if(c.type==="Personaje"){let u=cloneCard(c);u.attached=0;u.tempBoost=0;u.summoningSickness=true;p2Field.push(u);applyCollisionCombo(u,2);if(c.onPlay==="healshield"&&p2shield<5)p2shield++;if(c.onPlay==="shield"&&p1shield)p1shield--;log("🤖 P2 invocó "+c.name+".")}
+ if(choices.length){let c=choices[0],idx=aiHand.indexOf(c);for(let k=0;k<c.cost;k++)p2DonReserve.pop();p2don=p2DonReserve.length;aiHand.splice(idx,1);if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🟠 Jugando "+c.name+"...";setAIRealtime("Jugando "+c.name+"...");arenaLog("🃏 P2 juega "+c.name+".");render();await delay(1200);
+  if(c.type==="Personaje"){let u=cloneCard(c);u.attached=0;u.tempBoost=0;u.summoningSickness=true;p2Field.push(u);if(c.onPlay==="healshield"&&p2shield<5)p2shield++;if(c.onPlay==="shield"&&p1shield)p1shield--;log("🤖 P2 invocó "+c.name+".")}
   else if(c.type==="Evento"){if(c.effect==="break2")damageShield(1,2);else if(c.effect==="ko1500"&&p1Field.length){p2Grave.push(p1Field.shift());log("🤖 P2 derrotó un personaje.")}else if(c.effect==="bounce1000"&&p1Field.length){let x=p1Field.findIndex(x=>totalPower(x)<=1000);if(x>=0)aiHand.push(p1Field.splice(x,1)[0]);}else p1hp=Math.max(0,p1hp-1);log("🤖 P2 usó "+c.name+".")}
-  else{applyCollisionCombo(c,2);log("🤖 P2 usó "+c.name+".")}
+  else{log("🤖 P2 usó "+c.name+".")}
   render();await delay(700)}
  if(p2Field.length&&!gameOver){if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🔴 Atacando...";setAIRealtime("Decidiendo un ataque...");render();await delay(1200);let a=p2Field[0],power=totalPower(a);
   if(p1Field.length){let t=p1Field[0];if(power>totalPower(t)){p1Grave.push(p1Field.shift());log("🤖 "+a.name+" derrotó a "+t.name+". "+a.name+" sobrevive.")}else if(power<totalPower(t)){p2Grave.push(p2Field.shift());log("🤖 "+a.name+" fue derrotado. "+t.name+" sobrevive.")}else{p1Grave.push(p1Field.shift());p2Grave.push(a);log("🤖 Empate: ambos personajes fueron KO.")}}
   else if(p1leaderDon>=0){if(p1shield>0){p1shield--;log("🤖 P2 atacó y rompió 1 🛡️.")}else{p1hp=Math.max(0,p1hp-1);log("🤖 P2 dañó al Líder por 1 ❤️.")}}
  }
- checkWin();if(!gameOver){p1Field.forEach(c=>{c.tempBoost=0;c.used=false;c.summoningSickness=false});p2Field.forEach(c=>{c.tempBoost=0;c.used=false});leaderAbilityUsed=false;leaderAbilityUsedP2=false;awakenedThisTurnP1=false;awakenedThisTurnP2=false;comboP2=0;comboBonusP2=0;collisionLeaderUsedP2=false;comboP1=0;comboBonusP1=0;collisionLeaderUsedP1=false;active=1;turn++;p1max=Math.min(10,p1max+1);drawP1();drawDon(1);p1don=p1DonReserve.length;if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🟢 Esperando";log("🔄 Tu turno: robaste 1 carta y 1 DON.")}aiBusy=false;render()
+ checkWin();if(!gameOver){active=1;turn++;p1max=Math.min(10,p1max+1);drawP1();drawDon(1);p1don=p1DonReserve.length;if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🟢 Esperando";log("🔄 Tu turno: robaste 1 carta y 1 DON.")}aiBusy=false;render()
 }
 function endTurn(){
  if(gameOver)return;
  if(localMode==="pvp"){
-   if(active===1){active=2;comboP1=0;comboBonusP1=0;collisionLeaderUsedP1=false;log("🔄 Turno de PLAYER 2.");drawP2();drawDon(2);p2don=p2DonReserve.length;p2max=Math.min(10,p2max+1);}
-   else{active=1;comboP2=0;comboBonusP2=0;collisionLeaderUsedP2=false;log("🔄 Turno de PLAYER 1.");drawP1();drawDon(1);p1don=p1DonReserve.length;p1max=Math.min(10,p1max+1);}
+   if(active===1){active=2;log("🔄 Turno de PLAYER 2.");drawP2();drawDon(2);p2don=p2DonReserve.length;p2max=Math.min(10,p2max+1);}
+   else{active=1;log("🔄 Turno de PLAYER 1.");drawP1();drawDon(1);p1don=p1DonReserve.length;p1max=Math.min(10,p1max+1);}
    p1Field.forEach(c=>c.summoningSickness=false);p2Field.forEach(c=>c.summoningSickness=false);
    render(); return;
  }
@@ -545,17 +506,19 @@ function endTurn(){
 }
 function reset(){
  const saved=localStorage.getItem('GLTCG_SELECTED_LEADER');if(saved){const found=LEADERS.find(l=>l.id===saved);if(found)selectedLeader=found;}
- leaderAbilityUsed=false;leaderAbilityUsedP2=false;shadowUsedP1=false;shadowUsedP2=false;awakenedThisTurnP1=false;awakenedThisTurnP2=false;comboP1=0;comboP2=0;comboBonusP1=0;comboBonusP2=0;collisionLeaderUsedP1=false;collisionLeaderUsedP2=false;
+ leaderAbilityUsed=false;
  deck=makeDeck();hand=[];aiHand=[];p1Field=[];p2Field=[];p1Grave=[];p2Grave=[];p1DonDeck=makeDonDeck();p2DonDeck=makeDonDeck();p1DonReserve=[];p2DonReserve=[];
- p1hp=5;p2hp=5;p1shield=3;p2shield=3;p1max=3;p2max=2;p1don=0;p2don=0;p1leaderDon=0;p2leaderDon=0;active=1;turn=1;gameOver=false;aiBusy=false;boost=0;leaderAbilityUsed=false;
+ p1hp=5;p2hp=5;p1shield=3;p2shield=3;p1max=3;p2max=2;p1don=0;p2don=0;p1leaderDon=0;p2leaderDon=0;active=1;turn=1;gameOver=false;aiBusy=false;boost=0;leaderAbilityUsed=false;combo=0;comboBonus=0;
  for(let i=0;i<5;i++){drawP1();drawP2()}for(let i=0;i<3;i++){drawDon(1);drawDon(2)}if(document.getElementById("log"))document.getElementById("log").innerHTML="";log("🏴‍☠️ ¡Nueva partida!");render()
 }
 function openDeckBuilder(){const m=document.getElementById("deckModal");if(m)m.classList.add("open");renderDeckBuilder()}
 function closeDeckBuilder(){const m=document.getElementById("deckModal");if(m)m.classList.remove("open")}
 function renderDeckBuilder(){
- let search=document.getElementById("search"),g=document.getElementById("deckGrid");if(!g)return;let q=(search?search.value:"").toLowerCase(),sf=document.getElementById('setFilter'),sv=sf?sf.value:'ALL';g.innerHTML="";const dc=document.getElementById("deckCount");if(dc)dc.textContent=customDeck.length;
- LIBRARY.filter(c=>c.name.toLowerCase().includes(q)&&(sv==='ALL'||setOfCard(c)===sv)).forEach(c=>{let count=customDeck.filter(x=>x.name===c.name).length;let e=document.createElement("div");e.className="deckitem";e.innerHTML="<div style='font-size:40px'>"+c.art+"</div><b>"+c.name+"</b><br>⚡ "+c.cost+" · 💥 "+c.power+"<br><small>⭐ "+(c.rarity||'Común')+"</small><br><small>"+count+"/4 copias</small><br><button class='small' "+(count>=4?"disabled":"")+">＋ Añadir</button> <button class='small' "+(count<=0?"disabled":"")+">－ Quitar</button>";e.querySelectorAll("button")[0].onclick=()=>{customDeck.push(cloneCard(c));renderDeckBuilder()};e.querySelectorAll("button")[1].onclick=()=>{let ix=customDeck.findIndex(x=>x.name===c.name);if(ix>=0)customDeck.splice(ix,1);renderDeckBuilder()};g.appendChild(e)})
+ let search=document.getElementById("search"),g=document.getElementById("deckGrid");if(!g)return;let q=(search?search.value:"").toLowerCase();g.innerHTML="";const dc=document.getElementById("deckCount");if(dc)dc.textContent=customDeck.length;
+ LIBRARY.filter(c=>(set==='ALL'||c.set===set)&&c.name.toLowerCase().includes(q)).forEach(c=>{let count=customDeck.filter(x=>x.name===c.name).length;let e=document.createElement("div");e.className="deckitem";e.innerHTML="<div style='font-size:40px'>"+c.art+"</div><b>"+c.name+"</b><br>⚡ "+c.cost+" · 💥 "+c.power+"<br><small>⭐ "+(c.rarity||'Común')+"</small><br><small>"+count+"/4 copias</small><br><button class='small' "+(count>=4?"disabled":"")+">＋ Añadir</button> <button class='small' "+(count<=0?"disabled":"")+">－ Quitar</button>";e.querySelectorAll("button")[0].onclick=()=>{customDeck.push(cloneCard(c));renderDeckBuilder()};e.querySelectorAll("button")[1].onclick=()=>{let ix=customDeck.findIndex(x=>x.name===c.name);if(ix>=0)customDeck.splice(ix,1);renderDeckBuilder()};g.appendChild(e)})
 }
+function openSets(){const m=document.getElementById('setsModal');const b=document.getElementById('setsList');if(!m||!b)return;b.innerHTML='';(GLTCG.SETS||[]).forEach(s=>{const e=document.createElement('div');e.className='deckitem';e.innerHTML='<div style=\"font-size:42px\">'+(s.id==='COLLISION'?'💥':s.id==='SHADOWS'?'🌑':s.id==='AWAKENING'?'🌟':'🌅')+'</div><h3>'+s.name+'</h3><p>🎴 '+s.cards.length+' cartas · 👑 '+s.leaders.length+' líderes</p><small>'+s.leaders.map(x=>x.name).join(' · ')+'</small>';b.appendChild(e)});m.classList.add('open')}
+function closeSets(){document.getElementById('setsModal')?.classList.remove('open')}
 document.getElementById("drawBtn").onclick=()=>{if(gameOver)return;if(localMode==="pvp"&&active===2){drawP2();log("🎴 PLAYER 2 robó 1 carta.");render()}else if(canPlay()){drawP1();log("🎴 Robaste 1 carta.");render()}}
 document.getElementById("endBtn").onclick=endTurn;document.getElementById("resetBtn").onclick=reset;document.getElementById("deckBtn").onclick=openDeckBuilder;
 saveCollection();
