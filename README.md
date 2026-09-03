@@ -6,6 +6,7 @@ Primera build preparada para publicarse como sitio web estático.
 - SET 01 — Origins
 - SET 02 — Awakening
 - SET 03 — Shadows
+- SET 04 - Colission
 - VS IA
 - 2 jugadores local
 - Deck Builder
