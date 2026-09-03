@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grand Legends TCG — Web</title>
+
+<link rel="stylesheet" href="css/style.css?v=6.2.0">
+</head>
+<body>
+<div id="onlineModal" class="online-modal">
+ <div class="online-box">
+  <h2>🌐 JUGAR ONLINE</h2>
+  <p>🌐 Conexión online 5.2: el servidor gestiona salas, cuentas y partidas.</p>
+  <div class="online-server">
+   <label for="serverUrl">🖥️ Servidor</label>
+   <div class="online-row"><input id="serverUrl" placeholder="http://localhost:3000"><button type="button" onclick="setServerUrl()">💾 Guardar</button></div>
+   <small>En otro PC de la misma red usa, por ejemplo, <b>http://192.168.1.25:3000</b>.</small>
+  </div>
+  <div class="online-row">
+   <button type="button" onclick="createRoom()">➕ Crear sala</button>
+   <button type="button" onclick="showJoinRoom()">🔗 Unirse</button>
+  </div>
+  <div id="onlineCreate" style="display:none">
+   <h3>🔑 Tu código de sala</h3><div id="roomCode" class="online-code">------</div>
+   <div id="roomStatus" class="online-status">🟡 Esperando al segundo jugador...</div>
+   <button type="button" onclick="copyRoomCode()">📋 Copiar código</button><button id="onlineStartBtn" type="button" onclick="startOnlineMatch()" disabled>⚔️ Iniciar partida</button>
+  </div>
+  <div id="onlineJoin" style="display:none">
+   <h3>🔗 Código de sala</h3>
+   <div class="online-row"><input id="joinCode" maxlength="6" placeholder="Ej: A7K2P9"><button type="button" onclick="joinRoom()">Entrar</button></div>
+   <div id="joinStatus" class="online-status"></div>
+  </div>
+  <p class="online-note">🟢 El servidor de la versión 5.2 ya está incluido en la carpeta <b>server</b>. Para jugar desde otros computadores, el servidor debe estar ejecutándose en un equipo/hosting accesible por Internet.</p>
+  <button type="button" onclick="closeOnline()">Cerrar</button>
+ </div>
+</div>
+<div id="accountModal" class="account-modal"><div class="account-box"><div class="account-tabs"><button id="loginTab" class="active" type="button" onclick="showAccountTab('login')">🔐 Iniciar sesión</button><button id="registerTab" type="button" onclick="showAccountTab('register')">📝 Crear cuenta</button></div><div id="loginPanel"><h2>🔐 Iniciar sesión</h2><input id="loginUser" placeholder="Nombre de usuario" maxlength="20"><input id="loginPass" type="password" placeholder="Contraseña" maxlength="40"><button type="button" onclick="loginAccount()">Entrar</button></div><div id="registerPanel" style="display:none"><h2>📝 Crear cuenta</h2><input id="registerUser" placeholder="Nombre de usuario" maxlength="20"><input id="registerPass" type="password" placeholder="Contraseña" maxlength="40"><input id="registerPass2" type="password" placeholder="Repite la contraseña" maxlength="40"><button type="button" onclick="registerAccount()">Crear cuenta</button></div><div id="accountMsg" class="account-msg"></div><button type="button" onclick="closeAccount()">Cerrar</button></div></div><div id="profileModal" class="account-modal"><div class="account-box"><h2>👤 Mi perfil</h2><div id="profileContent"></div><button type="button" onclick="manualSave()">💾 Guardar ahora</button><button type="button" onclick="closeProfile()">Cerrar</button><button type="button" onclick="logoutAccount()">🚪 Cerrar sesión</button></div></div>
+<div id="tutorialOverlay" class="tutorial-overlay">
+  <div class="tutorial-box">
+    <div class="tutorial-step" id="tutorialStep">TUTORIAL · 1/6</div>
+    <h2 id="tutorialTitle">🏴‍☠️ Bienvenido a Grand Legends TCG</h2>
+    <p id="tutorialText"></p>
+    <div class="tutorial-tip" id="tutorialTip"></div>
+    <div class="tutorial-actions">
+      <button type="button" onclick="skipTutorial()">Saltar tutorial</button>
+      <button type="button" id="tutorialNext" onclick="tutorialNext()">Siguiente ➡️</button>
+    </div>
+  </div>
+</div>
+<div id="jsError" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:99;background:#4b1010;border:2px solid #ff6b6b;border-radius:12px;padding:12px;color:#fff;font-weight:bold"></div>
+
+<header id="gameHeader">
+<h1>🏴‍☠️ GRAND LEGENDS TCG</h1>
+<div class="sub">🌐 WEB · combate · Blocker · escudos · habilidades · DON · constructor · cartas · IA</div>
+<button onclick="openMainMenu()">☰ MENÚ</button>
+</header>
+
+<div class="modal open" id="mainMenu"><div class="modalbox center">
+<div class="web-badge">🌐 GRAND LEGENDS TCG · WEB</div>
+<div class="menuhero">🏴‍☠️</div>
+<h1>GRAND LEGENDS TCG</h1>
+<p class="hero-sub">Tu aventura TCG empieza aquí.</p>
+<p>Elige qué quieres hacer y entra directamente al juego.</p><div class="set-mini">📚 <b>3 sets disponibles:</b> ORIGINS · AWAKENING · SHADOWS</div>
+<div class="row" style="justify-content:center">
+<button type="button" onclick="openTutorial()">🎓 TUTORIAL</button><button type="button" class="online-disabled" disabled title="Online temporalmente desactivado">🌐 JUGAR ONLINE 🔒</button><button type="button" onclick="openAccount()">👤 CUENTA</button><button type="button" onclick="openProfile()">📊 PERFIL</button>
+<button onclick="openLocalMode()">⚔️ JUGAR LOCAL</button>
+<button onclick="openDeckBuilderFromMenu()">🛠️ Constructor de mazos</button>
+<button onclick="openPack()">🎁 Abrir sobres</button><button onclick="openSets()">📚 Sets</button>
+</div>
+<hr>
+<div class="row" style="justify-content:center">
+<span class="badge">📦 Colección: <span id="collectionCount">0</span> cartas</span>
+<span class="badge">🎁 Aperturas disponibles: <span id="packCount"><div id="welcomePackGift" class="badge" style="margin:8px auto;text-align:center">🎁 REGALO DE BIENVENIDA: 10 APERTURAS DE SOBRES</div>0</span></span>
+</div>
+<p style="opacity:.75;margin-top:18px">🏆 Gana una partida para recibir <b>10 aperturas</b>.</p>
+<div class="web-footer">⚔️ Juega · 🎴 Construye · 🎁 Colecciona · 🤖 Practica · 🌐 Conecta</div>
+</div></div>
+
+
+
+<div class="modal" id="localModeModal">
+ <div class="modalbox center">
+  <h1>⚔️ JUGAR LOCAL</h1>
+  <p>Elige cómo quieres jugar en este dispositivo.</p>
+  <div class="row" style="justify-content:center">
+   <button type="button" onclick="startLocalAI()">🤖 VS IA</button>
+   <button type="button" onclick="startLocalPVP()">👥 2 JUGADORES</button>
+  </div>
+  <p class="disabled-note">👥 En 2 jugadores se comparte el mismo dispositivo por turnos.</p>
+  <button type="button" onclick="closeLocalMode()">Cerrar</button>
+ </div>
+</div>
+
+<div class="modal" id="leaderModal"><div class="modalbox center"><h1>👑 ELIGE TU LÍDER</h1><p>Tu líder define tu estilo de juego. Elige entre los líderes disponibles de los 3 sets.</p><div id="leaderChoices" class="leader-choices"></div><p class="disabled-note">⚔️ Una vez elegido, comenzará la partida.</p></div></div>
+<div class="modal" id="setsModal"><div class="modalbox center"><div class="row"><h2 style="margin-right:auto">📚 COLECCIÓN DE SETS</h2><button type="button" onclick="closeSets()">Cerrar</button></div><p>Explora las cartas y líderes de cada expansión.</p><div id="setsGrid" class="sets-grid"></div></div></div>
+<div class="modal" id="packModal"><div class="modalbox center">
+<div class="row"><h2 style="margin-right:auto">🎁 APERTURA DE SOBRES</h2><button onclick="closePack();openMainMenu()">🏠 Menú</button></div>
+<p>Abre un sobre de <b>Grand Legends</b>. El catálogo incluye ORIGINS, AWAKENING y SHADOWS.</p>
+<p class="disabled-note">🎁 Las aperturas son limitadas. Empiezas sin aperturas y obtienes <b>10</b> al ganar una partida.</p>
+<button id="openPackBtn" onclick="openBooster()">✨ ABRIR SOBRE</button>
+<div id="packResult" class="deckgrid" style="margin-top:15px"></div>
+</div></div>
+<div class="wrap" id="gameApp">
+<section class="topbar">
+<div class="panel p2"><b id="p2Title">🤖 PLAYER 2 — IA</b><br><span id="aiStatus">🟢 Esperando</span><br>❤️ <span id="p2hp">5</span> · 🛡️ <span id="p2shield">3</span> · 🪙 Reserva <span id="p2don">2</span>/<span id="p2max">2</span> · 🎴 <span id="p2hand">0</span></div>
+<div class="panel p1"><b>🧑 PLAYER 1 — TÚ</b><br><span id="pStatus">🟢 Tu turno</span><br>❤️ <span id="p1hp">5</span> · 🛡️ <span id="p1shield">3</span> · 🪙 Reserva <span id="p1don">3</span>/<span id="p1max">3</span> · 🎴 <span id="p1hand">0</span></div>
+</section>
+
+<section class="battle-layout">
+<div class="battle-arena" id="battleArena">
+<div class="arena-row">
+<div class="arena-side"><b>PLAYER 2</b><div class="arena-stat">❤️ <span id="p2hpArena">5</span></div><div class="arena-stat">🛡️ <span id="p2shieldArena">3</span></div><div class="arena-stat">🪙 <span id="p2donArena">0</span></div></div>
+<div class="arena-leader enemy" id="arenaP2Leader" onclick="selectLeaderTarget(2)"><span id="arenaP2LeaderArt">👑</span><br><b id="arenaP2LeaderName">Rival</b><br>💥 5000 + DON<br><small id="arenaP2LeaderAbility">Esperando</small></div>
+</div>
+<div class="turn-banner" id="arenaTurn">⚔️ TU TURNO</div>
+<h4>PLAYER 2 · CAMPO</h4><div class="arena-field" id="arenaP2Field"></div>
+<h4>PLAYER 1 · CAMPO</h4><div class="arena-field" id="arenaP1Field"></div>
+<div class="arena-row">
+<div class="arena-side"><b>PLAYER 1</b><div class="arena-stat">❤️ <span id="p1hpArena">5</span></div><div class="arena-stat">🛡️ <span id="p1shieldArena">3</span></div><div class="arena-stat">🪙 <span id="p1donArena">0</span></div></div>
+<div class="arena-leader" id="arenaP1Leader"><span id="arenaP1LeaderArt">👑</span><br><b id="arenaP1LeaderName">Tu Líder</b><br>💥 <span id="arenaP1Power">5000</span><br><small id="arenaP1LeaderAbility"></small></div>
+</div>
+<div class="donzone" id="p1donZoneArena"><div class="center">🪙 TU ZONA DON</div><div class="donpool" id="arenaP1DonPool"></div></div>
+<div class="action-bar"><button onclick="endTurn()">⏭️ Terminar turno</button><button onclick="openDeckBuilder()">🛠️ Mazo</button><button onclick="openMainMenu()">🏠 Menú</button></div>
+<div class="center" id="activeHandLabel"></div><div class="hand" id="arenaHand"></div>
+</div>
+<aside class="battle-log"><h3>📜 REGISTRO DE BATALLA</h3><div id="aiRealtime" class="center"></div><div class="battle-log-list" id="arenaLog"></div></aside>
+</section>
+<div class="donzone enemy"><div class="center">🪙 DON P2</div><div class="donpool" id="arenaP2DonPool"></div></div>
+
+<h2>🃏 Tu mano</h2><div class="hand" id="hand"></div>
+<div class="center">
+<button id="drawBtn">🎴 Robar</button><button id="endBtn">⏭️ Terminar turno</button>
+<button id="deckBtn">🛠️ Constructor de mazos</button><button id="resetBtn">🔄 Reiniciar</button>
+</div>
+<p class="center"><span class="badge">🪙 DON arrastrable</span> <span class="badge">🛡️ Escudos</span> <span class="badge">🛡️ Blocker</span> <span class="badge">✨ Habilidades activables</span></p>
+<h2>🪦 Cementerio</h2><div class="panel">P1: <span id="p1grave">0</span> · P2: <span id="p2grave">0</span></div><div class="shadow-panel"><b>🌑 SOMBRAS DEL INFIERNO</b><div id="shadowStatus">Cada jugador puede usarla 1 vez por partida cuando una carta sea derrotada.</div></div>
+<h2>📜 Registro</h2><div class="log" id="log"></div>
+</div>
+
+<div class="modal" id="deckModal"><div class="modalbox">
+<div class="row"><h2 style="margin-right:auto">🛠️ Constructor de mazos</h2><button onclick="closeDeckBuilder();openMainMenu()">🏠 Menú</button></div>
+<p>Tu mazo: <b id="deckCount">0</b>/40 cartas. Máximo 4 copias por carta.</p><div class="set-filter-row"><label>📚 Set:</label><select id="setFilter" onchange="renderDeckBuilder()"><option value="ALL">Todos</option><option value="ORIGINS">SET 01 — ORIGINS</option><option value="AWAKENING">SET 02 — AWAKENING</option><option value="SHADOWS">SET 03 — SHADOWS</option></select></div>
+<input class="search" id="search" placeholder="🔍 Buscar carta..." oninput="renderDeckBuilder()">
+<div class="deckgrid" id="deckGrid"></div>
+</div></div>
+
+
+<script src="js/cards.js?v=6.2.0"></script>
+<script src="js/ai.js?v=6.2.0"></script>
+<script src="js/packs.js?v=6.2.0"></script>
+<script src="js/accounts.js?v=6.2.0"></script>
+<script src="js/online.js?v=6.2.0"></script>
+<script src="js/game.js?v=6.2.0"></script>
+</body></html>
