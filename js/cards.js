@@ -137,13 +137,77 @@ const SET_03_CARDS=[
 {id:'S40',name:'Portal del Inframundo',cost:4,power:0,type:'Recurso',art:'🕳️',ability:'Recupera hasta 2 personajes de coste 4 o menos de tu cementerio a tu mano.',effect:'recoverCost4x2',rarity:'Súper Rara'}
 ];
 
-const ALL_LEADERS=[...SET_01_LEADERS,...SET_02_LEADERS,...SET_03_LEADERS];
-const ALL_CARDS=[...SET_01_CARDS,...SET_02_CARDS,...SET_03_CARDS];
+
+
+// ==================== SET 04: COLLISION ====================
+const SET_04_LEADERS=[
+ {id:'C41',name:'Raze, Guerrero de la Colisión',art:'💥',color:'Rojo',life:5,ability:'Una vez por turno: cuando uno de tus personajes ataque, si tu Combo es 2+, gana +500 durante ese combate.'},
+ {id:'C42',name:'Mira, Estratega del Vórtice',art:'🌀',color:'Azul',life:5,ability:'Una vez por turno: al llegar a Combo 3, mira las 3 primeras cartas y reordénalas.'},
+ {id:'C43',name:'Torak, Titán del Impacto',art:'🗿',color:'Verde',life:5,ability:'Tus personajes con 2+ DON ganan +300. Con Combo 4, uno de ellos gana +500 adicional este turno.'},
+ {id:'C44',name:'Veyra, Reina del Combo',art:'👑',color:'Púrpura',life:5,ability:'Una vez por turno: cuando una carta active Combo 3+, recupera 1 DON usado.'},
+ {id:'C45',name:'Solen, Maestro de la Resonancia',art:'✨',color:'Amarillo',life:5,ability:'Una vez por turno: al llegar a Combo 2, roba 1 carta y descarta 1.'}
+];
+const SET_04_CARDS=[
+{id:'C46',name:'Aprendiz del Impacto',cost:1,power:500,type:'Personaje',art:'🥊',ability:'Combo 2: gana +300 poder este turno.',combo:2,comboBoost:300,rarity:'Común'},
+{id:'C47',name:'Corredora del Vórtice',cost:1,power:400,type:'Personaje',art:'🏃',ability:'Combo 2: mira la carta superior de tu mazo.',combo:2,comboEffect:'peekTop',rarity:'Común'},
+{id:'C48',name:'Guardia de Resonancia',cost:2,power:900,type:'Personaje',art:'🛡️',ability:'🛡️ BLOCKER.',blocker:true,rarity:'Común'},
+{id:'C49',name:'Luchador de la Cadena',cost:2,power:1000,type:'Personaje',art:'⛓️',ability:'Combo 2: gana +300 poder este turno.',combo:2,comboBoost:300,rarity:'Común'},
+{id:'C50',name:'Arquera del Vórtice',cost:2,power:800,type:'Personaje',art:'🏹',ability:'Al entrar: un enemigo pierde 300 poder este turno.',onPlay:'debuff300',rarity:'Común'},
+{id:'C51',name:'Monje de la Colisión',cost:3,power:1100,type:'Personaje',art:'🧘',ability:'Combo 3: roba 1 carta.',combo:3,comboEffect:'draw1',rarity:'Rara'},
+{id:'C52',name:'Bestia de Resonancia',cost:3,power:1400,type:'Personaje',art:'🦁',ability:'Combo 2: gana +300 poder este turno.',combo:2,comboBoost:300,rarity:'Rara'},
+{id:'C53',name:'Caballero del Impacto',cost:4,power:1800,type:'Personaje',art:'⚔️',ability:'Combo 3: gana +500 poder este turno.',combo:3,comboBoost:500,rarity:'Rara'},
+{id:'C54',name:'Cazador del Vórtice',cost:3,power:1300,type:'Personaje',art:'🎯',ability:'Combo 3: mira 1 carta de la mano rival.',combo:3,comboEffect:'peekHand',rarity:'Rara'},
+{id:'C55',name:'Guardián de la Cadena',cost:4,power:1600,type:'Personaje',art:'🛡️',ability:'🛡️ BLOCKER. Combo 4: gana +500 poder este turno.',blocker:true,combo:4,comboBoost:500,rarity:'Rara'},
+{id:'C56',name:'Dragón de la Colisión',cost:5,power:2300,type:'Personaje',art:'🐲',ability:'Combo 3: gana +700 poder este turno.',combo:3,comboBoost:700,rarity:'Súper Rara'},
+{id:'C57',name:'Reina de Resonancia',cost:5,power:2100,type:'Personaje',art:'👸',ability:'Combo 3: roba 2 y descarta 1.',combo:3,comboEffect:'draw2Discard',rarity:'Súper Rara'},
+{id:'C58',name:'Titán del Vórtice',cost:6,power:2800,type:'Personaje',art:'🗿',ability:'Combo 4: gana +700 poder este turno.',combo:4,comboBoost:700,rarity:'Súper Rara'},
+{id:'C59',name:'Espadachín de la Tormenta',cost:4,power:1900,type:'Personaje',art:'🌪️',ability:'Si tienes menos cartas en mano que el rival, gana +500.',onPlay:'handGap500',rarity:'Rara'},
+{id:'C60',name:'Fénix de la Cadena',cost:5,power:2200,type:'Personaje',art:'🔥',ability:'Combo 4: puede atacar inmediatamente.',combo:4,comboEffect:'ready',rarity:'Súper Rara'},
+{id:'C61',name:'Maestro de los Impactos',cost:4,power:1500,type:'Personaje',art:'🥋',ability:'Combo 2: otro personaje gana +500 este turno.',combo:2,comboEffect:'boostOther500',rarity:'Rara'},
+{id:'C62',name:'Bestia del Vórtice',cost:5,power:2400,type:'Personaje',art:'🐯',ability:'Combo 3: un enemigo pierde 500 poder este turno.',combo:3,comboEffect:'debuff500',rarity:'Súper Rara'},
+{id:'C63',name:'Caballero de la Resonancia',cost:5,power:2500,type:'Personaje',art:'🛡️',ability:'Combo 4: recupera 1 DON usado.',combo:4,comboEffect:'donRecover',rarity:'Súper Rara'},
+{id:'C64',name:'Dragón del Combo',cost:6,power:3000,type:'Personaje',art:'🐉',ability:'Combo 3: +500. Combo 5: +500 adicional.',combo:3,comboBoost:500,combo5Boost:500,rarity:'Ultra Rara'},
+{id:'C65',name:'Coloso del Impacto',cost:7,power:3500,type:'Personaje',art:'🗿',ability:'No puede atacar al entrar. Combo 4: puede atacar.',combo:4,comboEffect:'ready',rarity:'Ultra Rara'},
+{id:'C66',name:'Oráculo de la Cadena',cost:5,power:1600,type:'Personaje',art:'🔮',ability:'Una vez por turno: mira las 3 primeras cartas y reordénalas.',active:'peek3',rarity:'Súper Rara'},
+{id:'C67',name:'Guerrero del Último Combo',cost:6,power:2900,type:'Personaje',art:'💀',ability:'Combo 5: gana +1000 poder este turno.',combo:5,comboBoost:1000,rarity:'Ultra Rara'},
+{id:'C68',name:'Fénix de la Resonancia',cost:7,power:3100,type:'Personaje',art:'🪽',ability:'Al ser derrotado: recupera 2 cartas del cementerio a tu mano.',onKO:'recover2',rarity:'Ultra Rara'},
+{id:'C69',name:'Avatar de la Colisión',cost:8,power:4000,type:'Personaje',art:'🌟',ability:'Combo 4: gana +1000 y puede atacar a un personaje listo.',combo:4,comboBoost:1000,rarity:'Ultra Rara'},
+{id:'C70',name:'Soberano del Combo',cost:10,power:5000,type:'Personaje',art:'👑',ability:'Una vez por turno: repite el efecto de Combo 3 o inferior de un personaje tuyo.',active:'repeatCombo',rarity:'Legendaria'},
+{id:'C71',name:'Primer Impacto',cost:1,power:0,type:'Evento',art:'💥',ability:'Un personaje gana +500; con Combo 2, gana +300 adicional.',effect:'collisionBoost800',rarity:'Común'},
+{id:'C72',name:'Cadena Relámpago',cost:1,power:0,type:'Evento',art:'⚡',ability:'Roba 1; con Combo 3, roba otra y descarta 1.',effect:'collisionDraw',rarity:'Común'},
+{id:'C73',name:'Golpe del Vórtice',cost:2,power:0,type:'Evento',art:'🌀',ability:'Un enemigo pierde 700 poder este turno.',effect:'debuff700',rarity:'Común'},
+{id:'C74',name:'Resonancia Total',cost:2,power:0,type:'Evento',art:'🔊',ability:'Un personaje gana +1000; con Combo 3 puede atacar inmediatamente.',effect:'collisionBoostReady',rarity:'Rara'},
+{id:'C75',name:'Rompeformaciones',cost:3,power:0,type:'Evento',art:'💢',ability:'Un enemigo pierde sus habilidades este turno.',effect:'clearEnemyTemp',rarity:'Rara'},
+{id:'C76',name:'Doble Impacto',cost:2,power:0,type:'Evento',art:'✌️',ability:'Un personaje puede realizar un segundo ataque; con Combo 4 gana +500 durante ese ataque.',effect:'secondAttack',rarity:'Rara'},
+{id:'C77',name:'Vórtice Inverso',cost:3,power:0,type:'Evento',art:'↩️',ability:'Devuelve un enemigo de coste 4 o menos a la mano.',effect:'bounceCost4',rarity:'Rara'},
+{id:'C78',name:'Sobrecarga de Combo',cost:3,power:0,type:'Evento',art:'⚡',ability:'Aumenta inmediatamente tu Combo en 2.',effect:'comboPlus2',rarity:'Súper Rara'},
+{id:'C79',name:'Colisión Suprema',cost:4,power:0,type:'Evento',art:'🌠',ability:'Un personaje gana +1500; con Combo 4 puede atacar al Líder.',effect:'collisionBoostLeader',rarity:'Súper Rara'},
+{id:'C80',name:'Cadena Destructiva',cost:4,power:0,type:'Evento',art:'💥',ability:'Derrota un enemigo de 1800 o menos; con Combo 5, hasta 2500.',effect:'koCollision',rarity:'Súper Rara'},
+{id:'C81',name:'Resonancia Temporal',cost:2,power:0,type:'Evento',art:'⏳',ability:'Reutiliza una habilidad activada este turno.',effect:'reuseAbility',rarity:'Rara'},
+{id:'C82',name:'Impacto Final',cost:5,power:0,type:'Evento',art:'🌋',ability:'Un enemigo pierde 1500; con Combo 4, si queda en 1500 o menos es derrotado.',effect:'impactFinal',rarity:'Ultra Rara'},
+{id:'C83',name:'Tormenta de Colisión',cost:5,power:0,type:'Evento',art:'🌩️',ability:'Todos los enemigos pierden 700; con Combo 5 pierden sus habilidades este turno.',effect:'stormCollision',rarity:'Ultra Rara'},
+{id:'C84',name:'Combo Infinito',cost:6,power:0,type:'Evento',art:'♾️',ability:'Para efectos de cartas, tu Combo cuenta como +3 este turno.',effect:'comboPlus3Temp',rarity:'Ultra Rara'},
+{id:'C85',name:'Golpe de la Leyenda',cost:7,power:0,type:'Evento',art:'🏆',ability:'Un personaje gana +2000; con Combo 5, después de atacar puede quedar listo otra vez.',effect:'legendCombo',rarity:'Legendaria'},
+{id:'C86',name:'Fragmento de Resonancia',cost:1,power:0,type:'Recurso',art:'💠',ability:'Roba 1 carta.',effect:'draw',rarity:'Común'},
+{id:'C87',name:'Núcleo del Vórtice',cost:1,power:0,type:'Recurso',art:'🌀',ability:'Combo +1.',effect:'comboPlus1',rarity:'Común'},
+{id:'C88',name:'Cristal de Impacto',cost:2,power:0,type:'Recurso',art:'💎',ability:'Recupera 1 DON usado.',effect:'donRecover',rarity:'Rara'},
+{id:'C89',name:'Motor de Cadena',cost:2,power:0,type:'Recurso',art:'⚙️',ability:'Roba 2 y descarta 1.',effect:'draw2Discard',rarity:'Rara'},
+{id:'C90',name:'Núcleo de Colisión',cost:3,power:0,type:'Recurso',art:'🔷',ability:'Un personaje gana +500 poder este turno.',effect:'boost500',rarity:'Rara'},
+{id:'C91',name:'Fragmento del Combo',cost:3,power:0,type:'Recurso',art:'🔶',ability:'Combo +2.',effect:'comboPlus2',rarity:'Súper Rara'},
+{id:'C92',name:'Reactor de Resonancia',cost:4,power:0,type:'Recurso',art:'🔋',ability:'Recupera 2 DON usados.',effect:'donRecover2',rarity:'Súper Rara'},
+{id:'C93',name:'Corazón del Vórtice',cost:4,power:0,type:'Recurso',art:'❤️‍🔥',ability:'Roba 3 y descarta 1.',effect:'draw3Discard',rarity:'Ultra Rara'},
+{id:'C94',name:'Motor de la Primera Colisión',cost:5,power:0,type:'Recurso',art:'⚙️',ability:'Combo +3.',effect:'comboPlus3',rarity:'Ultra Rara'},
+{id:'C95',name:'Núcleo de la Leyenda',cost:6,power:0,type:'Recurso',art:'🌟',ability:'Roba 4 y recupera 2 DON usados.',effect:'legendCore',rarity:'Legendaria'}
+];
+
+const ALL_LEADERS=[...SET_01_LEADERS,...SET_02_LEADERS,...SET_03_LEADERS,...SET_04_LEADERS];
+const ALL_CARDS=[...SET_01_CARDS,...SET_02_CARDS,...SET_03_CARDS,...SET_04_CARDS];
 GLTCG.LEADERS=ALL_LEADERS;
 GLTCG.CARD_LIBRARY=ALL_CARDS;
 GLTCG.SETS={
  ORIGINS:{id:'ORIGINS',name:'SET 01 — ORIGINS',cards:SET_01_CARDS,leaders:SET_01_LEADERS,theme:'⚔️ Fundamentos'},
  AWAKENING:{id:'AWAKENING',name:'SET 02 — AWAKENING',cards:SET_02_CARDS,leaders:SET_02_LEADERS,theme:'✨ Despertar'},
- SHADOWS:{id:'SHADOWS',name:'SET 03 — SHADOWS',cards:SET_03_CARDS,leaders:SET_03_LEADERS,theme:'🌑 Sombras del Infierno'}
+ SHADOWS:{id:'SHADOWS',name:'SET 03 — SHADOWS',cards:SET_03_CARDS,leaders:SET_03_LEADERS,theme:'🌑 Sombras del Infierno'},
+ COLLISION:{id:'COLLISION',name:'SET 04 — COLLISION',cards:SET_04_CARDS,leaders:SET_04_LEADERS,theme:'💥 Combo'}
 };
-GLTCG.SET_01=GLTCG.SETS.ORIGINS;GLTCG.SET_02=GLTCG.SETS.AWAKENING;GLTCG.SET_03=GLTCG.SETS.SHADOWS;
+GLTCG.SET_01=GLTCG.SETS.ORIGINS;GLTCG.SET_02=GLTCG.SETS.AWAKENING;GLTCG.SET_03=GLTCG.SETS.SHADOWS;GLTCG.SET_04=GLTCG.SETS.COLLISION;
