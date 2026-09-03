@@ -1,0 +1,32 @@
+GRAND LEGENDS TCG — SET 05: RABBIT HOLE
+Estado: BORRADOR PARA REVISIÓN
+
+IDENTIDAD
+Rabbit Hole representa sobrevivir cuando la partida debería terminar. La expansión tiene 6 líderes + 54 cartas = 60 cartas.
+
+MECÁNICA PRINCIPAL: RABBIT HOLE
+- Cada jugador puede activar Rabbit Hole como máximo UNA VEZ por partida.
+- La carta insignia es R40 — Leyendas Inmortales.
+- Si un jugador tiene 0 ❤️ y un ataque al Líder fuera a derrotarlo, puede usar Leyendas Inmortales desde su mano para ignorar ese ataque.
+- La carta se consume y pasa al cementerio.
+- No recupera ❤️ ni crea invulnerabilidad permanente.
+- No se activa ante KO por efecto, mazo vacío ni una orden directa de perder la partida.
+- No depende del Líder elegido: cualquier Líder puede usar la carta si está en su mano.
+
+LÍDERES
+R01 Aster, Caminante del Rabbit Hole — Rojo
+R02 Mira, Guardiana del Umbral — Azul
+R03 Orion, Rey de la Madriguera — Verde
+R04 Nyra, Reina del Último Camino — Morado
+R05 Seraph, Testigo de la Segunda Oportunidad — Amarillo
+R06 EON, Leyenda del Otro Lado — Multicolor
+
+CARTAS
+R07-R26 Personajes (20)
+R27-R40 Eventos (14)
+R41-R53 Recursos (13)
+R54-R56 Eventos adicionales (3)
+R57-R60 Personajes legendarios (4)
+
+NOTA DE BALANCE
+Las cartas alrededor de 0 ❤️ dan valor a estar al borde de la derrota, pero no deberían restaurar demasiada vida. La tensión buscada es: "sobreviví una vez; ahora tengo que cerrar la partida antes del siguiente ataque".

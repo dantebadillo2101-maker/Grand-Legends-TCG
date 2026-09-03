@@ -61,7 +61,7 @@
 <div class="menuhero">🏴‍☠️</div>
 <h1>GRAND LEGENDS TCG</h1>
 <p class="hero-sub">Tu aventura TCG empieza aquí.</p>
-<p>Elige qué quieres hacer y entra directamente al juego.</p><div class="set-mini">📚 <b>4 sets disponibles:</b> ORIGINS · AWAKENING · SHADOWS · COLLISION</div>
+<p>Elige qué quieres hacer y entra directamente al juego.</p><div class="set-mini">📚 <b>5 sets disponibles:</b> ORIGINS · AWAKENING · SHADOWS · COLLISION · RABBIT HOLE</div>
 <div class="row" style="justify-content:center">
 <button type="button" onclick="openTutorial()">🎓 TUTORIAL</button><button type="button" class="online-disabled" disabled title="Online temporalmente desactivado">🌐 JUGAR ONLINE 🔒</button><button type="button" onclick="openAccount()">👤 CUENTA</button><button type="button" onclick="openProfile()">📊 PERFIL</button>
 <button onclick="openLocalMode()">⚔️ JUGAR LOCAL</button>
@@ -92,11 +92,11 @@
  </div>
 </div>
 
-<div class="modal" id="leaderModal"><div class="modalbox center"><h1>👑 ELIGE TU LÍDER</h1><p>Tu líder define tu estilo de juego. Elige entre los líderes disponibles de los 4 sets.</p><div id="leaderChoices" class="leader-choices"></div><p class="disabled-note">⚔️ Una vez elegido, comenzará la partida.</p></div></div>
+<div class="modal" id="leaderModal"><div class="modalbox center"><h1>👑 ELIGE TU LÍDER</h1><p>Tu líder define tu estilo de juego. Elige entre los líderes disponibles de los 5 sets.</p><div id="leaderChoices" class="leader-choices"></div><p class="disabled-note">⚔️ Una vez elegido, comenzará la partida.</p></div></div>
 <div class="modal" id="setsModal"><div class="modalbox center"><div class="row"><h2 style="margin-right:auto">📚 COLECCIÓN DE SETS</h2><button type="button" onclick="closeSets()">Cerrar</button></div><p>Explora las cartas y líderes de cada expansión.</p><div id="setsGrid" class="sets-grid"></div></div></div>
 <div class="modal" id="packModal"><div class="modalbox center">
 <div class="row"><h2 style="margin-right:auto">🎁 APERTURA DE SOBRES</h2><button onclick="closePack();openMainMenu()">🏠 Menú</button></div>
-<p>Abre un sobre de <b>Grand Legends</b>. El catálogo incluye ORIGINS, AWAKENING, SHADOWS y COLLISION.</p>
+<p>Abre un sobre de <b>Grand Legends</b>. El catálogo incluye ORIGINS, AWAKENING, SHADOWS, COLLISION y RABBIT HOLE.</p>
 <p class="disabled-note">🎁 Las aperturas son limitadas. Empiezas sin aperturas y obtienes <b>10</b> al ganar una partida.</p>
 <button id="openPackBtn" onclick="openBooster()">✨ ABRIR SOBRE</button>
 <div id="packResult" class="deckgrid" style="margin-top:15px"></div>
@@ -140,7 +140,7 @@
 
 <div class="modal" id="deckModal"><div class="modalbox">
 <div class="row"><h2 style="margin-right:auto">🛠️ Constructor de mazos</h2><button onclick="closeDeckBuilder();openMainMenu()">🏠 Menú</button></div>
-<p>Tu mazo: <b id="deckCount">0</b>/40 cartas. Máximo 4 copias por carta.</p><div class="set-filter-row"><label>📚 Set:</label><select id="setFilter" onchange="renderDeckBuilder()"><option value="ALL">Todos</option><option value="ORIGINS">SET 01 — ORIGINS</option><option value="AWAKENING">SET 02 — AWAKENING</option><option value="SHADOWS">SET 03 — SHADOWS</option><option value="COLLISION">SET 04 — COLLISION</option></select></div>
+<p>Tu mazo: <b id="deckCount">0</b>/40 cartas. Máximo 4 copias por carta.</p><div class="set-filter-row"><label>📚 Set:</label><select id="setFilter" onchange="renderDeckBuilder()"><option value="ALL">Todos</option><option value="ORIGINS">SET 01 — ORIGINS</option><option value="AWAKENING">SET 02 — AWAKENING</option><option value="SHADOWS">SET 03 — SHADOWS</option><option value="COLLISION">SET 04 — COLLISION</option><option value="RABBIT_HOLE">SET 05 — RABBIT HOLE</option></select></div>
 <input class="search" id="search" placeholder="🔍 Buscar carta..." oninput="renderDeckBuilder()">
 <div class="deckgrid" id="deckGrid"></div>
 </div></div>

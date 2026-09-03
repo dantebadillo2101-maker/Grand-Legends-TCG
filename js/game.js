@@ -14,7 +14,7 @@ let deck=[],hand=[],aiHand=[],p1Field=[],p2Field=[],p1Grave=[],p2Grave=[],p1DonD
 let p1hp=5,p2hp=5,p1shield=3,p2shield=3,p1max=3,p2max=2,p1don=3,p2don=2,p1leaderDon=0,p2leaderDon=0;
 let active=1,turn=1,gameOver=false,aiBusy=false,boost=0,customDeck=[];
 let comboP1=0,comboP2=0,comboBonusP1=0,comboBonusP2=0,collisionLeaderUsedP1=false,collisionLeaderUsedP2=false;
-let localMode="ai"; let p2AttackSelection=null; let selectedLeaderP2=LEADERS[1]||LEADERS[0]; let leaderAbilityUsedP2=false; let shadowUsedP1=false,shadowUsedP2=false; let awakenedThisTurnP1=false,awakenedThisTurnP2=false;
+let localMode="ai"; let p2AttackSelection=null; let rabbitHoleUsed=false; let selectedLeaderP2=LEADERS[1]||LEADERS[0]; let leaderAbilityUsedP2=false; let shadowUsedP1=false,shadowUsedP2=false; let awakenedThisTurnP1=false,awakenedThisTurnP2=false;
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function cloneCard(c){return {...c,rarity:c.rarity||"Común"}}
@@ -59,7 +59,7 @@ function openLeaderForLocal(){
 function startGame(){startLocalAI()}
 function renderLeaderChoices(player=1){
  const box=document.getElementById('leaderChoices');if(!box)return;box.innerHTML='';
- LEADERS.forEach(l=>{const e=document.createElement('div');e.className='leader-choice';const leaderSet=l.id.startsWith('A')?'AWAKENING':l.id.startsWith('S')?'SHADOWS':l.id.startsWith('C')?'COLLISION':'ORIGINS';e.innerHTML=`<div class="leader-choice-art">${l.art}</div><h2>${l.name}</h2><div class="badge">${leaderSet} · ${l.color}</div><p>❤️ ${l.life} vidas</p><p>${l.ability}</p><button type="button">👑 Elegir líder</button>`;e.querySelector('button').onclick=()=>selectLeader(l.id,player);box.appendChild(e)});
+ LEADERS.forEach(l=>{const e=document.createElement('div');e.className='leader-choice';const leaderSet=l.id.startsWith('A')?'AWAKENING':l.id.startsWith('S')?'SHADOWS':l.id.startsWith('C')?'COLLISION':l.id.startsWith('R')?'RABBIT HOLE':'ORIGINS';e.innerHTML=`<div class="leader-choice-art">${l.art}</div><h2>${l.name}</h2><div class="badge">${leaderSet} · ${l.color}</div><p>❤️ ${l.life} vidas</p><p>${l.ability}</p><button type="button">👑 Elegir líder</button>`;e.querySelector('button').onclick=()=>selectLeader(l.id,player);box.appendChild(e)});
 }
 function selectLeader(id,player=1){
  const found=LEADERS.find(l=>l.id===id)||LEADERS[0];
@@ -78,7 +78,7 @@ function openDeckBuilderFromMenu(){
 
 function openSets(){closeMainMenu();const modal=document.getElementById('setsModal');const grid=document.getElementById('setsGrid');if(!modal||!grid)return;grid.innerHTML='';const catalog=(GLTCG&&GLTCG.SETS)?GLTCG.SETS:{};Object.values(catalog).forEach(setData=>{const card=document.createElement('div');card.className='set-card';const cards=Array.isArray(setData.cards)?setData.cards:[];const leaders=Array.isArray(setData.leaders)?setData.leaders:[];card.innerHTML='<h3>'+setData.name+'</h3><p>'+(setData.theme||'')+'</p><div class="set-count">🃏 '+cards.length+' cartas · 👑 '+leaders.length+' líderes</div><p>'+cards.map(c=>'<span class="set-badge">'+c.id+'</span>').join('')+'</p>';grid.appendChild(card)});if(!grid.children.length){grid.innerHTML='<div class="set-card"><h3>📚 Sets no disponibles</h3><p>El catálogo todavía no se ha cargado.</p></div>';}modal.classList.add('open')}
 function closeSets(){document.getElementById('setsModal')?.classList.remove('open');openMainMenu()}
-function setOfCard(c){if(c&&c.id)return c.id.startsWith('A')?'AWAKENING':c.id.startsWith('S')?'SHADOWS':c.id.startsWith('C')?'COLLISION':'ORIGINS';return 'ORIGINS'}
+function setOfCard(c){if(c&&c.id)return c.id.startsWith('A')?'AWAKENING':c.id.startsWith('S')?'SHADOWS':c.id.startsWith('C')?'COLLISION':c.id.startsWith('R')?'RABBIT_HOLE':'ORIGINS';return 'ORIGINS'}
 function showShadowStatus(){const e=document.getElementById('shadowStatus');if(e)e.textContent='P1: '+(shadowUsedP1?'✅ usada':'🟢 disponible')+' · P2: '+(shadowUsedP2?'✅ usada':'🟢 disponible')+' · Se activa cuando una carta sea derrotada.'}
 function comboValue(player){return (player===1?comboP1:comboP2)+(player===1?comboBonusP1:comboBonusP2)}
 function addCombo(player,n=1){if(player===1)comboP1+=n;else comboP2+=n;showComboStatus()}
@@ -431,6 +431,17 @@ function playCard(i){
  else{let u=cloneCard(c);u.attached=0;u.tempBoost=boost;u.used=false;u.summoningSickness=true;u.basePower=u.power;u.awakened=false;u.tempBoost=(u.tempBoost||0)+cardPowerBonus(u);p1Field.push(u);applyCardEffect(c);if(u.awakening)triggerAwakening(u,1,false);applyCollisionCombo(u,1);}
  checkWin();render()
 }
+function tryRabbitHole(player){
+  if(rabbitHoleUsed)return false;
+  const source=player===1?hand:aiHand;
+  const ix=source.findIndex(c=>c.effect==='rabbitHole'||c.name==='Leyendas Inmortales');
+  if(ix<0)return false;
+  const card=source.splice(ix,1)[0];
+  rabbitHoleUsed=true;
+  log((player===1?'🐇 RABBIT HOLE: ':'🤖 🐇 RABBIT HOLE: ')+card.name+' ignoró el ataque final.');
+  return true;
+}
+
 function damageShield(player,n){
  if(player===1){let k=Math.min(n,p1shield);p1shield-=k;p1hp=Math.max(0,p1hp-(n-k));log("💥 P1 perdió "+k+" escudo(s).")}
  else{let k=Math.min(n,p2shield);p2shield-=k;p2hp=Math.max(0,p2hp-(n-k));log("💥 P2 perdió "+k+" escudo(s).")}
@@ -449,7 +460,9 @@ function attackLeader(){
  if(!canPlay())return;
  let blockers=p2Field.filter(c=>c.blocker);
  if(blockers.length){let b=blockers[0];let use=confirm("🛡️ "+b.name+" tiene BLOCKER. ¿Quieres atacar al Líder igualmente? La IA puede bloquear.");if(!use)return}
- p2shield>0?(p2shield--,log("👑 ¡Ataque al Líder! Rompiste 1 🛡️.")):(p2hp=Math.max(0,p2hp-1),log("👑 ¡Ataque al Líder! Perdió 1 ❤️."));
+ if(p2shield>0){p2shield--;log("👑 ¡Ataque al Líder! Rompiste 1 🛡️.")}
+ else if(p2hp<=0 && tryRabbitHole(2)){log("🐇 RABBIT HOLE: el Líder rival estaba en 0 ❤️ y evitó el golpe final.")}
+ else{p2hp=Math.max(0,p2hp-1);log("👑 ¡Ataque al Líder! Perdió 1 ❤️.")}
  checkWin();render()
 }
 function activateAbility(i){
@@ -495,7 +508,9 @@ function attackCharacterP2(i,j){
 }
 function attackLeaderP2(){
  if(localMode!=="pvp"||active!==2||gameOver)return;
- if(p1shield>0){p1shield--;log("👑 PLAYER 2 atacó al Líder y rompió 1 🛡️.")}else{p1hp=Math.max(0,p1hp-1);log("👑 PLAYER 2 dañó al Líder por 1 ❤️.")}
+ if(p1shield>0){p1shield--;log("👑 PLAYER 2 atacó al Líder y rompió 1 🛡️.")}
+ else if(p1hp<=0 && tryRabbitHole(1)){log("🐇 RABBIT HOLE: PLAYER 1 estaba en 0 ❤️ y evitó el golpe final.")}
+ else{p1hp=Math.max(0,p1hp-1);log("👑 PLAYER 2 dañó al Líder por 1 ❤️.")}
  checkWin();render()
 }
 
@@ -528,7 +543,7 @@ async function aiTurn(){ if(localMode==="pvp")return;
   render();await delay(700)}
  if(p2Field.length&&!gameOver){if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🔴 Atacando...";setAIRealtime("Decidiendo un ataque...");render();await delay(1200);let a=p2Field[0],power=totalPower(a);
   if(p1Field.length){let t=p1Field[0];if(power>totalPower(t)){p1Grave.push(p1Field.shift());log("🤖 "+a.name+" derrotó a "+t.name+". "+a.name+" sobrevive.")}else if(power<totalPower(t)){p2Grave.push(p2Field.shift());log("🤖 "+a.name+" fue derrotado. "+t.name+" sobrevive.")}else{p1Grave.push(p1Field.shift());p2Grave.push(a);log("🤖 Empate: ambos personajes fueron KO.")}}
-  else if(p1leaderDon>=0){if(p1shield>0){p1shield--;log("🤖 P2 atacó y rompió 1 🛡️.")}else{p1hp=Math.max(0,p1hp-1);log("🤖 P2 dañó al Líder por 1 ❤️.")}}
+  else if(p1leaderDon>=0){if(p1shield>0){p1shield--;log("🤖 P2 atacó y rompió 1 🛡️.")}else if(p1hp<=0 && tryRabbitHole(1)){log("🤖 🐇 RABBIT HOLE: PLAYER 1 estaba en 0 ❤️ y evitó el golpe final.")}else{p1hp=Math.max(0,p1hp-1);log("🤖 P2 dañó al Líder por 1 ❤️.")}}
  }
  checkWin();if(!gameOver){p1Field.forEach(c=>{c.tempBoost=0;c.used=false;c.summoningSickness=false});p2Field.forEach(c=>{c.tempBoost=0;c.used=false});leaderAbilityUsed=false;leaderAbilityUsedP2=false;awakenedThisTurnP1=false;awakenedThisTurnP2=false;comboP2=0;comboBonusP2=0;collisionLeaderUsedP2=false;comboP1=0;comboBonusP1=0;collisionLeaderUsedP1=false;active=1;turn++;p1max=Math.min(10,p1max+1);drawP1();drawDon(1);p1don=p1DonReserve.length;if(document.getElementById("aiStatus"))document.getElementById("aiStatus").textContent="🟢 Esperando";log("🔄 Tu turno: robaste 1 carta y 1 DON.")}aiBusy=false;render()
 }
@@ -547,7 +562,7 @@ function reset(){
  const saved=localStorage.getItem('GLTCG_SELECTED_LEADER');if(saved){const found=LEADERS.find(l=>l.id===saved);if(found)selectedLeader=found;}
  leaderAbilityUsed=false;leaderAbilityUsedP2=false;shadowUsedP1=false;shadowUsedP2=false;awakenedThisTurnP1=false;awakenedThisTurnP2=false;comboP1=0;comboP2=0;comboBonusP1=0;comboBonusP2=0;collisionLeaderUsedP1=false;collisionLeaderUsedP2=false;
  deck=makeDeck();hand=[];aiHand=[];p1Field=[];p2Field=[];p1Grave=[];p2Grave=[];p1DonDeck=makeDonDeck();p2DonDeck=makeDonDeck();p1DonReserve=[];p2DonReserve=[];
- p1hp=5;p2hp=5;p1shield=3;p2shield=3;p1max=3;p2max=2;p1don=0;p2don=0;p1leaderDon=0;p2leaderDon=0;active=1;turn=1;gameOver=false;aiBusy=false;boost=0;leaderAbilityUsed=false;
+ p1hp=5;p2hp=5;p1shield=3;p2shield=3;p1max=3;p2max=2;p1don=0;p2don=0;p1leaderDon=0;p2leaderDon=0;active=1;turn=1;gameOver=false;aiBusy=false;boost=0;leaderAbilityUsed=false;rabbitHoleUsed=false;
  for(let i=0;i<5;i++){drawP1();drawP2()}for(let i=0;i<3;i++){drawDon(1);drawDon(2)}if(document.getElementById("log"))document.getElementById("log").innerHTML="";log("🏴‍☠️ ¡Nueva partida!");render()
 }
 function openDeckBuilder(){const m=document.getElementById("deckModal");if(m)m.classList.add("open");renderDeckBuilder()}

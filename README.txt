@@ -1,10 +1,7 @@
-GRAND LEGENDS TCG — WEB 6.2 SET EXPANSION
+Grand Legends TCG — SET 05: RABBIT HOLE
+Borrador integrado sobre la base 6.3.3 para revisión.
 
-Incluye SET 01 ORIGINS, SET 02 AWAKENING y SET 03 SHADOWS.
-Nuevo apartado 📚 Sets desde el menú.
-Constructor de mazos con filtro por set.
-Sobres usan todo el catálogo disponible.
-SHADOWS añade Sombras del Infierno con 1 uso por jugador y dado 1-6.
-Online permanece bloqueado.
+Incluye 5 sets en el catálogo y 60 cartas nuevas de Rabbit Hole (6 líderes + 54 cartas).
+La mecánica central permite evitar una sola vez por partida un ataque que fuera a derrotar al Líder con 0 ❤️, usando Leyendas Inmortales desde la mano.
 
-Abre index.html en Chrome.
+Arena 2.0 y Online NO se modifican en este paquete: quedan fuera de esta fase.
