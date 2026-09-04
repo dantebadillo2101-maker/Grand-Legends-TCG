@@ -8,7 +8,7 @@ se estaran haciendo actualizaciones cada cierto tiempo ademas , en las cuales se
 - SET 01 — Origins
 - SET 02 — Awakening
 - SET 03 — Shadows
-- SET 04 - Colission
+- SET 04 - Collision
 - SET 05 - RABBIT HOLE
 - VS IA
 - 2 jugadores local
@@ -16,9 +16,16 @@ se estaran haciendo actualizaciones cada cierto tiempo ademas , en las cuales se
 - Packs
 - Cuentas locales mediante localStorage
 - Online desactivado temporalmente
+- Pruebas de reglas en `tests/rules.test.js`
+
+## Pruebas
+
+Con Node.js instalado, ejecuta `node tests/rules.test.js` desde la raiz del proyecto.
+
+La persistencia usa migraciones versionadas mediante `GLTCG_STORAGE_SCHEMA`.
 
 ## Publicación
 Esta carpeta está preparada para GitHub Pages. El archivo `index.html` debe quedar en la raíz del repositorio publicado.
 
 ## Versión
-6.2.0
+6.3.3

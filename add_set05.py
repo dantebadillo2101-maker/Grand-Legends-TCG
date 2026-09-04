@@ -1,5 +1,5 @@
 from pathlib import Path
-p=Path('/mnt/data/legends_build/js/cards.js')
+p=Path(__file__).resolve().parent / 'js' / 'cards.js'
 s=p.read_text()
 insert=r'''
 

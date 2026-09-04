@@ -3,153 +3,784 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Grand Legends TCG — Web</title>
-
+<title>Grand Legends TCG — Web Oficial</title>
 <link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-<div id="onlineModal" class="online-modal">
- <div class="online-box">
-  <h2>🌐 JUGAR ONLINE</h2>
-  <p>🌐 Conexión online 5.2: el servidor gestiona salas, cuentas y partidas.</p>
-  <div class="online-server">
-   <label for="serverUrl">🖥️ Servidor</label>
-   <div class="online-row"><input id="serverUrl" placeholder="http://localhost:3000"><button type="button" onclick="setServerUrl()">💾 Guardar</button></div>
-   <small>En otro PC de la misma red usa, por ejemplo, <b>http://192.168.1.25:3000</b>.</small>
-  </div>
-  <div class="online-row">
-   <button type="button" onclick="createRoom()">➕ Crear sala</button>
-   <button type="button" onclick="showJoinRoom()">🔗 Unirse</button>
-  </div>
-  <div id="onlineCreate" style="display:none">
-   <h3>🔑 Tu código de sala</h3><div id="roomCode" class="online-code">------</div>
-   <div id="roomStatus" class="online-status">🟡 Esperando al segundo jugador...</div>
-   <button type="button" onclick="copyRoomCode()">📋 Copiar código</button><button id="onlineStartBtn" type="button" onclick="startOnlineMatch()" disabled>⚔️ Iniciar partida</button>
-  </div>
-  <div id="onlineJoin" style="display:none">
-   <h3>🔗 Código de sala</h3>
-   <div class="online-row"><input id="joinCode" maxlength="6" placeholder="Ej: A7K2P9"><button type="button" onclick="joinRoom()">Entrar</button></div>
-   <div id="joinStatus" class="online-status"></div>
-  </div>
-  <p class="online-note">🟢 El servidor de la versión 5.2 ya está incluido en la carpeta <b>server</b>. Para jugar desde otros computadores, el servidor debe estar ejecutándose en un equipo/hosting accesible por Internet.</p>
-  <button type="button" onclick="closeOnline()">Cerrar</button>
- </div>
-</div>
-<div id="accountModal" class="account-modal"><div class="account-box"><div class="account-tabs"><button id="loginTab" class="active" type="button" onclick="showAccountTab('login')">🔐 Iniciar sesión</button><button id="registerTab" type="button" onclick="showAccountTab('register')">📝 Crear cuenta</button></div><div id="loginPanel"><h2>🔐 Iniciar sesión</h2><input id="loginUser" placeholder="Nombre de usuario" maxlength="20"><input id="loginPass" type="password" placeholder="Contraseña" maxlength="40"><button type="button" onclick="loginAccount()">Entrar</button></div><div id="registerPanel" style="display:none"><h2>📝 Crear cuenta</h2><input id="registerUser" placeholder="Nombre de usuario" maxlength="20"><input id="registerPass" type="password" placeholder="Contraseña" maxlength="40"><input id="registerPass2" type="password" placeholder="Repite la contraseña" maxlength="40"><button type="button" onclick="registerAccount()">Crear cuenta</button></div><div id="accountMsg" class="account-msg"></div><button type="button" onclick="closeAccount()">Cerrar</button></div></div><div id="profileModal" class="account-modal"><div class="account-box"><h2>👤 Mi perfil</h2><div id="profileContent"></div><button type="button" onclick="manualSave()">💾 Guardar ahora</button><button type="button" onclick="closeProfile()">Cerrar</button><button type="button" onclick="logoutAccount()">🚪 Cerrar sesión</button></div></div>
-<div id="tutorialOverlay" class="tutorial-overlay">
-  <div class="tutorial-box">
-    <div class="tutorial-step" id="tutorialStep">TUTORIAL · 1/6</div>
-    <h2 id="tutorialTitle">🏴‍☠️ Bienvenido a Grand Legends TCG</h2>
-    <p id="tutorialText"></p>
-    <div class="tutorial-tip" id="tutorialTip"></div>
-    <div class="tutorial-actions">
-      <button type="button" onclick="skipTutorial()">Saltar tutorial</button>
-      <button type="button" id="tutorialNext" onclick="tutorialNext()">Siguiente ➡️</button>
+
+<!-- ==========================================
+     PANTALLA INFORMATIVA PRE-BATALLA & CENTRO DE JUGADOR (ORGANIZADA POR PESTAÑAS)
+     ========================================== -->
+<div id="playerHubModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="playerHubTitle">
+  <div class="modalbox hub-modalbox">
+    <!-- Barra de Navegación del Modal -->
+    <div class="modal-nav-bar">
+      <button type="button" class="btn-nav-back" onclick="closePlayerHub()">⬅️ Volver</button>
+      <div id="playerHubTitle" class="hub-modal-title">⚔️ INFORMACIÓN &amp; CENTRO DEL JUGADOR</div>
+      <button type="button" class="modal-close-icon" onclick="closePlayerHub()">✕</button>
+    </div>
+
+    <!-- PESTAÑAS PRINCIPALES (NO INVASIVAS) -->
+    <div class="hub-nav-tabs">
+      <button type="button" id="hubTabBtnProfile" class="hub-tab-btn active" onclick="switchHubTab('profile')">
+        <span class="tab-icon">👤</span> Mi Perfil
+      </button>
+      <button type="button" id="hubTabBtnAccount" class="hub-tab-btn" onclick="switchHubTab('account')">
+        <span class="tab-icon">🔐</span> Cuenta &amp; Acceso
+      </button>
+      <button type="button" id="hubTabBtnOnline" class="hub-tab-btn" onclick="switchHubTab('online')">
+        <span class="tab-icon">🌐</span> Modo Online
+      </button>
+      <button type="button" id="hubTabBtnTactics" class="hub-tab-btn" onclick="switchHubTab('tactics')">
+        <span class="tab-icon">⚔️</span> Guía Pre-Batalla
+      </button>
+    </div>
+
+    <!-- PESTAÑA 1: PERFIL DEL JUGADOR -->
+    <div id="hubPanelProfile" class="hub-panel active">
+      <div class="hub-panel-header">
+        <div class="hub-avatar-badge">👤</div>
+        <div>
+          <h2 id="hubProfileUsername">Jugador</h2>
+          <p class="subtitle-text" style="margin-bottom:0">Progreso local y sincronización de estadísticas</p>
+        </div>
+      </div>
+
+      <div id="hubProfileStats" class="hub-profile-grid">
+        <div class="hub-stat-card">
+          <div class="stat-icon">🏆</div>
+          <div class="stat-value" id="hubStatWins">0</div>
+          <div class="stat-label">Victorias</div>
+        </div>
+        <div class="hub-stat-card">
+          <div class="stat-icon">💀</div>
+          <div class="stat-value" id="hubStatLosses">0</div>
+          <div class="stat-label">Derrotas</div>
+        </div>
+        <div class="hub-stat-card">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-value" id="hubStatLevel">1</div>
+          <div class="stat-label">Nivel Actual</div>
+        </div>
+        <div class="hub-stat-card">
+          <div class="stat-icon">📦</div>
+          <div class="stat-value" id="hubStatCollection">0</div>
+          <div class="stat-label">Cartas en Mazo/Colección</div>
+        </div>
+        <div class="hub-stat-card">
+          <div class="stat-icon">🎁</div>
+          <div class="stat-value" id="hubStatPacks">10</div>
+          <div class="stat-label">Sobres Listos</div>
+        </div>
+      </div>
+
+      <div class="hub-actions-row">
+        <button type="button" class="btn-primary-action" onclick="saveHubProfile()">💾 Guardar Progreso</button>
+        <button type="button" id="hubLogoutBtn" class="btn-danger" onclick="logoutAccount()">🚪 Cerrar Sesión</button>
+        <button type="button" class="btn-secondary-action" onclick="switchHubTab('account')">🔄 Cambiar / Crear Cuenta</button>
+      </div>
+      <div id="hubProfileMsg" class="account-msg"></div>
+    </div>
+
+    <!-- PESTAÑA 2: INICIAR SESIÓN / CREAR CUENTA -->
+    <div id="hubPanelAccount" class="hub-panel" style="display:none">
+      <div class="account-subtabs">
+        <button id="hubLoginSubTab" class="active" type="button" onclick="showHubAccountMode('login')">🔐 Iniciar Sesión</button>
+        <button id="hubRegisterSubTab" type="button" onclick="showHubAccountMode('register')">📝 Crear Nueva Cuenta</button>
+      </div>
+
+      <div id="hubLoginBox">
+        <h3>🔐 Iniciar Sesión</h3>
+        <p class="subtitle-text">Accede con tu usuario para recuperar tus mazos, cartas desbloqueadas y estadísticas.</p>
+        <div class="form-group">
+          <label for="hubLoginUser">Nombre de Usuario</label>
+          <input id="hubLoginUser" placeholder="Ej: PirataRey" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label for="hubLoginPass">Contraseña</label>
+          <input id="hubLoginPass" type="password" placeholder="Tu contraseña secreta" maxlength="40">
+        </div>
+        <button type="button" class="btn-primary-action" onclick="submitHubLogin()">Entrar al Juego</button>
+      </div>
+
+      <div id="hubRegisterBox" style="display:none">
+        <h3>📝 Crear Nueva Cuenta</h3>
+        <p class="subtitle-text">¡Regístrate gratis y recibe <b>10 Sobres Booster de bienvenida</b> para armar tu mazo!</p>
+        <div class="form-group">
+          <label for="hubRegisterUser">Nombre de Usuario</label>
+          <input id="hubRegisterUser" placeholder="Ej: PirataRey" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label for="hubRegisterPass">Contraseña</label>
+          <input id="hubRegisterPass" type="password" placeholder="Mínimo 4 caracteres" maxlength="40">
+        </div>
+        <div class="form-group">
+          <label for="hubRegisterPass2">Repetir Contraseña</label>
+          <input id="hubRegisterPass2" type="password" placeholder="Repite la contraseña" maxlength="40">
+        </div>
+        <button type="button" class="btn-primary-action" onclick="submitHubRegister()">Crear Cuenta &amp; Recibir 10 Sobres</button>
+      </div>
+
+      <div id="hubAccountMsg" class="account-msg"></div>
+    </div>
+
+    <!-- PESTAÑA 3: JUGAR ONLINE / MULTIJUGADOR -->
+    <div id="hubPanelOnline" class="hub-panel" style="display:none">
+      <div class="hub-panel-header">
+        <div class="hub-avatar-badge">🌐</div>
+        <div>
+          <h2>Multijugador Online en Red</h2>
+          <p class="subtitle-text" style="margin-bottom:0">Conéctate a una sala compartida para jugar partidas contra otros jugadores.</p>
+        </div>
+      </div>
+
+      <div class="online-server-config">
+        <label for="hubServerUrl">🖥️ Dirección del Servidor de Juego:</label>
+        <div class="online-row">
+          <input id="hubServerUrl" placeholder="http://localhost:3000" value="http://localhost:3000">
+          <button type="button" onclick="saveHubServerUrl()">💾 Guardar</button>
+        </div>
+        <small style="color:#94A3B8;">Para jugar con un amigo en tu misma red Wi-Fi, ingresa la IP del host (ej: <b>http://192.168.1.50:3000</b>).</small>
+      </div>
+
+      <div class="online-options-grid">
+        <div class="online-option-card">
+          <h3>➕ Crear Sala de Partida</h3>
+          <p>Genera un código de 6 caracteres para invitar a tu rival.</p>
+          <button type="button" class="btn-primary-action" onclick="createHubRoom()">➕ Generar Sala</button>
+        </div>
+        <div class="online-option-card">
+          <h3>🔗 Unirse a Sala Existente</h3>
+          <p>Ingresa el código que te compartió tu rival para entrar.</p>
+          <div class="online-row" style="margin-top:8px">
+            <input id="hubJoinCode" maxlength="6" placeholder="Ej: A7K2P9" style="text-transform:uppercase">
+            <button type="button" onclick="joinHubRoom()">Unirse</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="hubOnlineRoomDisplay" style="display:none; margin-top:14px;" class="center">
+        <h3>🔑 Código de tu Sala</h3>
+        <div id="hubRoomCode" class="online-code">------</div>
+        <div id="hubRoomStatus" class="online-status">🟡 Esperando al segundo jugador...</div>
+        <div class="row" style="justify-content:center; gap:8px;">
+          <button type="button" onclick="copyHubRoomCode()">📋 Copiar Código</button>
+          <button id="hubOnlineStartBtn" type="button" class="btn-primary-action" onclick="startHubOnlineMatch()" disabled>⚔️ Iniciar Batalla</button>
+        </div>
+      </div>
+
+      <div id="hubOnlineMsg" class="account-msg"></div>
+    </div>
+
+    <!-- PESTAÑA 4: GUÍA TÁCTICA PRE-BATALLA -->
+    <div id="hubPanelTactics" class="hub-panel" style="display:none">
+      <div class="hub-panel-header">
+        <div class="hub-avatar-badge">⚔️</div>
+        <div>
+          <h2>Reglas Oficiales y Tácticas de Batalla</h2>
+          <p class="subtitle-text" style="margin-bottom:0">Reglas justas de combate, guardia de campo y turnos de ataque.</p>
+        </div>
+      </div>
+
+      <div class="hub-tactics-grid">
+        <div class="hub-tactic-card">
+          <div class="tactic-header">🛡️ Guardia de Campo (Anti-Ataques Directos)</div>
+          <p><b>Regla Principal:</b> Si el oponente tiene personajes en su campo, <b>NO puedes atacar directamente a su Líder ni a sus Escudos</b>. Debes derrotar primero a los personajes defensores para abrir camino.</p>
+        </div>
+
+        <div class="hub-tactic-card">
+          <div class="tactic-header">⏳ Turno de Invocación (Summoning Sickness)</div>
+          <p>Las cartas recién jugadas entran en estado de preparación y <b>no pueden atacar en el mismo turno en que son invocadas</b>. Podrán atacar a partir de tu siguiente turno.</p>
+        </div>
+
+        <div class="hub-tactic-card">
+          <div class="tactic-header">⚔️ Límite de 1 Ataque por Turno</div>
+          <p>Para evitar cadenas infinitas, <b>cada personaje puede realizar como máximo 1 ataque por turno</b>. Tras atacar, quedará en estado 💤 <i>Agotado</i> hasta el inicio de tu siguiente turno.</p>
+        </div>
+
+        <div class="hub-tactic-card">
+          <div class="tactic-header">🪙 Cartas DON!! (+1000 ATK) y Combos</div>
+          <p>Generas 2 DON!! por turno (máx 10). Arrástralos hacia tus personajes para otorgarles <b>+1000 de Poder</b> temporal. Encadena ataques para subir tu multiplicador Combo.</p>
+        </div>
+      </div>
+
+      <div class="center" style="margin-top:18px;">
+        <button type="button" class="btn-hero-play" style="max-width:380px; margin:auto;" onclick="closePlayerHub();openLocalMode()">
+          <span class="play-icon">⚔️</span>
+          <div class="play-text">
+            <span class="play-title">¡ENTRAR A LA BATALLA!</span>
+            <span class="play-sub">Elegir modo de combate local o IA</span>
+          </div>
+          <span class="play-arrow">➔</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
-<div id="jsError" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:99;background:#4b1010;border:2px solid #ff6b6b;border-radius:12px;padding:12px;color:#fff;font-weight:bold"></div>
 
+<div id="jsError" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#4b1010;border:2px solid #ff6b6b;border-radius:12px;padding:12px;color:#fff;font-weight:bold"></div>
+
+<!-- ==========================================
+     HEADER DE LA PARTIDA ACTIVA
+     ========================================== -->
 <header id="gameHeader">
-<h1>🏴‍☠️ GRAND LEGENDS TCG</h1>
-<div class="sub">🌐 WEB · combate · Blocker · escudos · habilidades · DON · constructor · cartas · IA</div>
-<button onclick="openMainMenu()">☰ MENÚ</button>
+  <div class="header-inner">
+    <div class="brand-badge">
+      <span class="brand-logo-icon">🏴‍☠️</span>
+      <div>
+        <h1 class="header-title">GRAND LEGENDS TCG</h1>
+        <div class="header-sub">BATALLA TÁCTICA · LÍDERES · DON!! · ESCUDOS · BLOCKER</div>
+      </div>
+    </div>
+    <div class="header-controls">
+      <button type="button" class="btn-head-action" onclick="openPlayerHub('tactics')" title="Ver guía táctica y perfil">ℹ️ Guía &amp; Perfil</button>
+      <button type="button" class="btn-head-action" onclick="openDeckBuilder()" title="Revisar mazo">🛠️ Mazo</button>
+      <button type="button" class="btn-head-action" onclick="confirmExitToMenu()" title="Volver al menú principal">🏠 Menú Principal</button>
+    </div>
+  </div>
 </header>
 
-<div class="modal open" id="mainMenu"><div class="modalbox center">
-<div class="web-badge">🌐 GRAND LEGENDS TCG · WEB</div>
-<div class="menuhero">🏴‍☠️</div>
-<h1>GRAND LEGENDS TCG</h1>
-<p class="hero-sub">Tu aventura TCG empieza aquí.</p>
-<p>Elige qué quieres hacer y entra directamente al juego.</p><div class="set-mini">📚 <b>5 sets disponibles:</b> ORIGINS · AWAKENING · SHADOWS · COLLISION · RABBIT HOLE</div>
-<div class="row" style="justify-content:center">
-<button type="button" onclick="openTutorial()">🎓 TUTORIAL</button><button type="button" class="online-disabled" disabled title="Online temporalmente desactivado">🌐 JUGAR ONLINE 🔒</button><button type="button" onclick="openAccount()">👤 CUENTA</button><button type="button" onclick="openProfile()">📊 PERFIL</button>
-<button onclick="openLocalMode()">⚔️ JUGAR LOCAL</button>
-<button onclick="openDeckBuilderFromMenu()">🛠️ Constructor de mazos</button>
-<button onclick="openPack()">🎁 Abrir sobres</button><button onclick="openSets()">📚 Sets</button>
-</div>
-<hr>
-<div class="row" style="justify-content:center">
-<span class="badge">📦 Colección: <span id="collectionCount">0</span> cartas</span>
-<span class="badge">🎁 Aperturas disponibles: <span id="packCount">0</span></span><div id="welcomePackGift" class="badge" style="margin:8px auto;text-align:center">🎁 REGALO DE BIENVENIDA: 10 APERTURAS DE SOBRES</div>
-</div>
-<p style="opacity:.75;margin-top:18px">🏆 Gana una partida para recibir <b>10 aperturas</b>.</p>
-<div class="web-footer">⚔️ Juega · 🎴 Construye · 🎁 Colecciona · 🤖 Practica · 🌐 Conecta</div>
-</div></div>
+<!-- ==========================================
+     MENÚ PRINCIPAL REDISEÑADO
+     ========================================== -->
+<div class="modal open" id="mainMenu" role="dialog" aria-modal="true" aria-labelledby="mainMenuTitle">
+  <div class="modalbox menu-modalbox">
+    
+    <!-- Barra Superior de Estado del Jugador -->
+    <div class="user-status-strip">
+      <div class="user-pill" onclick="openPlayerHub('profile')" title="Ver tu perfil">
+        <span class="user-avatar">👤</span>
+        <span id="menuUserName">Jugador</span>
+      </div>
+      <div class="stats-pills-row">
+        <span class="badge badge-gold" title="Cartas desbloqueadas en tu colección">📦 Colección: <b id="collectionCount">0</b></span>
+        <span class="badge badge-cyan" title="Sobres listos para abrir">🎁 Sobres: <b id="packCount">0</b></span>
+      </div>
+    </div>
 
+    <!-- Encabezado Hero del Menú -->
+    <div class="main-menu-hero">
+      <div class="menu-hero-icon">🏴‍☠️</div>
+      <h1 id="mainMenuTitle" class="main-menu-title">GRAND LEGENDS TCG</h1>
+      <p class="main-menu-subtitle">El juego de cartas coleccionables táctico y competitivo</p>
+      <div class="set-mini-tag">
+        <span>📚 5 Expansiones Activas:</span>
+        <b>ORIGINS</b> · <b>AWAKENING</b> · <b>SHADOWS</b> · <b>COLLISION</b> · <b>RABBIT HOLE</b>
+      </div>
+    </div>
 
+    <!-- SECCIÓN 1: ACCIÓN PRINCIPAL (JUGAR) -->
+    <div class="menu-primary-cta">
+      <button type="button" class="btn-hero-play" onclick="openLocalMode()">
+        <span class="play-icon">⚔️</span>
+        <div class="play-text">
+          <span class="play-title">¡ENTRAR EN BATALLA!</span>
+          <span class="play-sub">Juega contra la Inteligencia Artificial o 2 Jugadores en local</span>
+        </div>
+        <span class="play-arrow">➔</span>
+      </button>
+    </div>
 
-<div class="modal" id="localModeModal">
- <div class="modalbox center">
-  <h1>⚔️ JUGAR LOCAL</h1>
-  <p>Elige cómo quieres jugar en este dispositivo.</p>
-  <div class="row" style="justify-content:center">
-   <button type="button" onclick="startLocalAI()">🤖 VS IA</button>
-   <button type="button" onclick="startLocalPVP()">👥 2 JUGADORES</button>
+    <!-- SECCIÓN 2: GRID DE MÓDULOS DEL JUEGO -->
+    <div class="menu-modules-grid">
+      <!-- Mazo -->
+      <div class="menu-card" onclick="openDeckBuilderFromMenu()">
+        <div class="menu-card-icon">🛠️</div>
+        <div class="menu-card-body">
+          <h3>Constructor de Mazos</h3>
+          <p>Diseña tu baraja estratégica de 40 cartas y prueba combinaciones.</p>
+        </div>
+        <span class="menu-card-cta">Construir ➔</span>
+      </div>
+
+      <!-- Sobres -->
+      <div class="menu-card" onclick="openPack()">
+        <div class="menu-card-icon">🎁</div>
+        <div class="menu-card-body">
+          <h3>Apertura de Sobres</h3>
+          <p>Abre boosters de los 5 sets y desbloquea cartas Ultra Raras.</p>
+        </div>
+        <span class="menu-card-cta">Abrir ➔</span>
+      </div>
+
+      <!-- Sets -->
+      <div class="menu-card" onclick="openSets()">
+        <div class="menu-card-icon">📚</div>
+        <div class="menu-card-body">
+          <h3>Catálogo de Sets</h3>
+          <p>Explora todas las cartas, líderes y efectos de cada expansión.</p>
+        </div>
+        <span class="menu-card-cta">Explorar ➔</span>
+      </div>
+
+      <!-- Tutorial -->
+      <div class="menu-card" onclick="openPlayerHub('tactics')">
+        <div class="menu-card-icon">🎓</div>
+        <div class="menu-card-body">
+          <h3>Guía &amp; Tácticas</h3>
+          <p>Consulta las reglas de combate, DON!!, Blocker y ataques clave.</p>
+        </div>
+        <span class="menu-card-cta">Ver Guía ➔</span>
+      </div>
+
+      <!-- Cuenta / Perfil -->
+      <div class="menu-card" onclick="openPlayerHub('account')">
+        <div class="menu-card-icon">👤</div>
+        <div class="menu-card-body">
+          <h3>Cuenta &amp; Perfil</h3>
+          <p>Inicia sesión, guarda tus estadísticas y gestiona tu progreso.</p>
+        </div>
+        <span class="menu-card-cta">Perfil ➔</span>
+      </div>
+
+      <!-- Multijugador Online (Desactivado) -->
+      <div class="menu-card" onclick="openPlayerHub('online')">
+        <div class="menu-card-icon">🌐</div>
+        <div class="menu-card-body">
+          <h3>Modo Online <span class="badge-soon">🔒 PRÓXIMO</span></h3>
+          <p>Salas multijugador en tiempo real por código de invitación.</p>
+        </div>
+        <span class="menu-card-cta">En pausa</span>
+      </div>
+    </div>
+
+    <!-- Regalo de bienvenida / Footer de Menú -->
+    <div class="menu-footer-strip">
+      <div id="welcomePackGift" class="welcome-gift-box">
+        🎁 <strong>Recompensa de Victoria:</strong> Gana una partida local o VS IA para obtener <b>10 aperturas de sobres</b>.
+      </div>
+    </div>
+
   </div>
-  <p class="disabled-note">👥 En 2 jugadores se comparte el mismo dispositivo por turnos.</p>
-  <button type="button" onclick="closeLocalMode()">Cerrar</button>
- </div>
 </div>
 
-<div class="modal" id="leaderModal"><div class="modalbox center"><h1>👑 ELIGE TU LÍDER</h1><p>Tu líder define tu estilo de juego. Elige entre los líderes disponibles de los 5 sets.</p><div id="leaderChoices" class="leader-choices"></div><p class="disabled-note">⚔️ Una vez elegido, comenzará la partida.</p></div></div>
-<div class="modal" id="setsModal"><div class="modalbox center"><div class="row"><h2 style="margin-right:auto">📚 COLECCIÓN DE SETS</h2><button type="button" onclick="closeSets()">Cerrar</button></div><p>Explora las cartas y líderes de cada expansión.</p><div id="setsGrid" class="sets-grid"></div></div></div>
-<div class="modal" id="packModal"><div class="modalbox center">
-<div class="row"><h2 style="margin-right:auto">🎁 APERTURA DE SOBRES</h2><button onclick="closePack();openMainMenu()">🏠 Menú</button></div>
-<p>Abre un sobre de <b>Grand Legends</b>. El catálogo incluye ORIGINS, AWAKENING, SHADOWS, COLLISION y RABBIT HOLE.</p>
-<p class="disabled-note">🎁 Las aperturas son limitadas. Empiezas sin aperturas y obtienes <b>10</b> al ganar una partida.</p>
-<button id="openPackBtn" onclick="openBooster()">✨ ABRIR SOBRE</button>
-<div id="packResult" class="deckgrid" style="margin-top:15px"></div>
-</div></div>
+<!-- ==========================================
+     MODAL DE SELECCIÓN DE MODO LOCAL
+     ========================================== -->
+<div class="modal" id="localModeModal">
+  <div class="modalbox center">
+    <div class="modal-nav-bar">
+      <button type="button" class="btn-nav-back" onclick="closeLocalMode();openMainMenu()">⬅️ Volver al Menú</button>
+      <button type="button" class="modal-close-icon" onclick="closeLocalMode();openMainMenu()">✕</button>
+    </div>
+    
+    <h2>⚔️ ELIGE TU MODO DE JUEGO</h2>
+    <p class="subtitle-text">Selecciona cómo deseas disputar la partida en este dispositivo:</p>
+    
+    <div class="modes-selection-grid">
+      <!-- Opción 1: VS IA -->
+      <div class="mode-card" onclick="startLocalAI()">
+        <div class="mode-icon">🤖</div>
+        <h3>VS Inteligencia Artificial</h3>
+        <p>Enfréntate a la IA táctica de Grand Legends. Ideal para practicar y probar nuevos mazos.</p>
+        <label for="aiDifficulty">Dificultad de la IA</label>
+        <select id="aiDifficulty" onclick="event.stopPropagation()" onchange="setAIDifficulty(this.value)">
+          <option value="baja">Baja</option>
+          <option value="normal">Normal</option>
+          <option value="dificil">Difícil</option>
+        </select>
+        <button type="button" class="btn-select-mode">⚔️ Jugar contra la IA</button>
+      </div>
+
+      <!-- Opción 2: 2 Jugadores Local -->
+      <div class="mode-card" onclick="startLocalPVP()">
+        <div class="mode-icon">👥</div>
+        <h3>2 Jugadores (PVP Local)</h3>
+        <p>Dos jugadores compartiendo el mismo dispositivo por turnos en una batalla cara a cara.</p>
+        <button type="button" class="btn-select-mode">👥 Jugar 2 Jugadores</button>
+      </div>
+    </div>
+
+    <div class="modal-bottom-actions">
+      <button type="button" class="btn-cancel" onclick="closeLocalMode();openMainMenu()">⬅️ Cancelar y Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     MODAL DE SELECCIÓN DE LÍDER
+     ========================================== -->
+<div class="modal" id="leaderModal">
+  <div class="modalbox">
+    <div class="modal-nav-bar">
+      <button type="button" class="btn-nav-back" id="btnBackFromLeader" onclick="closeLeaderModal()">⬅️ Volver a Selección de Modo</button>
+      <button type="button" class="modal-close-icon" onclick="closeLeaderModal()">✕</button>
+    </div>
+    
+    <div class="center" style="margin-bottom:14px;">
+      <h2 id="leaderModalTitle">👑 ELIGE TU LÍDER</h2>
+      <p class="subtitle-text">Tu líder define tu identidad, puntos de vida y habilidades pasivas en batalla.</p>
+      
+      <!-- Filtro Rápido por Set de Líderes -->
+      <div class="set-filter-tabs">
+        <button type="button" class="filter-tab active" onclick="filterLeadersBySet('ALL', this)">Todos los Sets</button>
+        <button type="button" class="filter-tab" onclick="filterLeadersBySet('ORIGINS', this)">SET 01 · Origins</button>
+        <button type="button" class="filter-tab" onclick="filterLeadersBySet('AWAKENING', this)">SET 02 · Awakening</button>
+        <button type="button" class="filter-tab" onclick="filterLeadersBySet('SHADOWS', this)">SET 03 · Shadows</button>
+        <button type="button" class="filter-tab" onclick="filterLeadersBySet('COLLISION', this)">SET 04 · Collision</button>
+        <button type="button" class="filter-tab" onclick="filterLeadersBySet('RABBIT HOLE', this)">SET 05 · Rabbit Hole</button>
+      </div>
+    </div>
+
+    <div id="leaderChoices" class="leader-choices"></div>
+  </div>
+</div>
+
+<!-- ==========================================
+     MODAL DE CATÁLOGO DE SETS
+     ========================================== -->
+<div class="modal" id="setsModal">
+  <div class="modalbox">
+    <div class="modal-nav-bar">
+      <button type="button" class="btn-nav-back" onclick="closeSets()">⬅️ Volver al Menú Principal</button>
+      <button type="button" class="modal-close-icon" onclick="closeSets()">✕</button>
+    </div>
+    <div class="center" style="margin-bottom:14px;">
+      <h2>📚 CATÁLOGO OFICIAL DE EXPANSIONES</h2>
+      <p class="subtitle-text">Explora las cartas, líderes y mecánicas de cada una de las 5 expansiones de Grand Legends.</p>
+    </div>
+    <div id="setsGrid" class="sets-grid"></div>
+  </div>
+</div>
+
+<!-- ==========================================
+     MODAL DE APERTURA DE SOBRES
+     ========================================== -->
+<div id="packModal" class="modal">
+  <div class="modalbox center">
+    <div class="modal-nav-bar">
+      <button type="button" class="btn-nav-back" onclick="closePack();openMainMenu()">⬅️ Volver al Menú Principal</button>
+      <button type="button" class="modal-close-icon" onclick="closePack();openMainMenu()">✕</button>
+    </div>
+    
+    <h2>🎁 APERTURA DE SOBRES BOOSTER</h2>
+    <p class="subtitle-text">Abre un sobre de 5 cartas de <b>Grand Legends</b> para obtener cartas legendarias y añadir a tu mazo.</p>
+    
+    <div class="pack-opener-box">
+      <div class="pack-visual-icon">📦✨</div>
+      <button id="openPackBtn" class="btn-open-booster" onclick="openBooster()">✨ ABRIR SOBRE</button>
+    </div>
+
+    <div id="packResult" class="deckgrid" style="margin-top:20px"></div>
+  </div>
+</div>
+
+<!-- ==========================================
+     TABLERO DE BATALLA (GAME APP)
+     ========================================== -->
 <div class="wrap" id="gameApp">
-<section class="topbar">
-<div class="panel p2"><b id="p2Title">🤖 PLAYER 2 — IA</b><br><span id="aiStatus">🟢 Esperando</span><br>❤️ <span id="p2hp">5</span> · 🛡️ <span id="p2shield">3</span> · 🪙 Reserva <span id="p2don">2</span>/<span id="p2max">2</span> · 🎴 <span id="p2hand">0</span></div>
-<div class="panel p1"><b>🧑 PLAYER 1 — TÚ</b><br><span id="pStatus">🟢 Tu turno</span><br>❤️ <span id="p1hp">5</span> · 🛡️ <span id="p1shield">3</span> · 🪙 Reserva <span id="p1don">3</span>/<span id="p1max">3</span> · 🎴 <span id="p1hand">0</span></div>
-</section>
+  <!-- Barra de Estado de Jugadores -->
+  <section class="topbar">
+    <div class="panel p2">
+      <b id="p2Title">🤖 PLAYER 2 — IA</b><br>
+      <span id="aiStatus">🟢 Esperando</span><br>
+      ❤️ <span id="p2hp">5</span> · 🛡️ <span id="p2shield">3</span> · 🪙 Reserva <span id="p2don">2</span>/<span id="p2max">2</span> · 🎴 <span id="p2hand">0</span>
+    </div>
+    <div class="panel p1">
+      <b>🧑 PLAYER 1 — TÚ</b><br>
+      <span id="pStatus">🟢 Tu turno</span><br>
+      ❤️ <span id="p1hp">5</span> · 🛡️ <span id="p1shield">3</span> · 🪙 Reserva <span id="p1don">3</span>/<span id="p1max">3</span> · 🎴 <span id="p1hand">0</span>
+    </div>
+  </section>
 
-<section class="battle-layout">
-<div class="battle-arena" id="battleArena">
-<div class="arena-row">
-<div class="arena-side"><b>PLAYER 2</b><div class="arena-stat">❤️ <span id="p2hpArena">5</span></div><div class="arena-stat">🛡️ <span id="p2shieldArena">3</span></div><div class="arena-stat">🪙 <span id="p2donArena">0</span></div></div>
-<div class="arena-leader enemy" id="arenaP2Leader" onclick="selectLeaderTarget(2)"><span id="arenaP2LeaderArt">👑</span><br><b id="arenaP2LeaderName">Rival</b><br>💥 5000 + DON<br><small id="arenaP2LeaderAbility">Esperando</small></div>
-</div>
-<div class="turn-banner" id="arenaTurn">⚔️ TU TURNO</div>
-<h4>PLAYER 2 · CAMPO</h4><div class="arena-field" id="arenaP2Field"></div>
-<h4>PLAYER 1 · CAMPO</h4><div class="arena-field" id="arenaP1Field"></div>
-<div class="arena-row">
-<div class="arena-side"><b>PLAYER 1</b><div class="arena-stat">❤️ <span id="p1hpArena">5</span></div><div class="arena-stat">🛡️ <span id="p1shieldArena">3</span></div><div class="arena-stat">🪙 <span id="p1donArena">0</span></div></div>
-<div class="arena-leader" id="arenaP1Leader"><span id="arenaP1LeaderArt">👑</span><br><b id="arenaP1LeaderName">Tu Líder</b><br>💥 <span id="arenaP1Power">5000</span><br><small id="arenaP1LeaderAbility"></small></div>
-</div>
-<div class="donzone" id="p1donZoneArena"><div class="center">🪙 TU ZONA DON</div><div class="donpool" id="arenaP1DonPool"></div></div>
-<div class="action-bar"><button onclick="endTurn()">⏭️ Terminar turno</button><button onclick="openDeckBuilder()">🛠️ Mazo</button><button onclick="openMainMenu()">🏠 Menú</button></div>
-<div class="center" id="activeHandLabel"></div><div class="hand" id="arenaHand"></div>
-</div>
-<aside class="battle-log"><h3>📜 REGISTRO DE BATALLA</h3><div id="aiRealtime" class="center"></div><div class="battle-log-list" id="arenaLog"></div></aside>
-</section>
-<div class="donzone enemy"><div class="center">🪙 DON P2</div><div class="donpool" id="arenaP2DonPool"></div></div>
+  <!-- Campo de Batalla y Arena -->
+  <section class="battle-layout">
+        <div class="battle-arena" id="battleArena">
+      
+      <!-- ==========================================
+           1. LADO DEL RIVAL (PLAYER 2 / IA)
+           ========================================== -->
+      <div class="arena-half enemy-half">
+        <div class="field-side-tag enemy-tag">
+          <span>🔴 LADO DEL RIVAL (PLAYER 2 / IA)</span>
+        </div>
 
-<h2>🃏 Tu mano</h2><div class="hand" id="hand"></div>
-<div class="center">
-<button id="drawBtn">🎴 Robar</button><button id="endBtn">⏭️ Terminar turno</button>
-<button id="deckBtn">🛠️ Constructor de mazos</button><button id="resetBtn">🔄 Reiniciar</button>
+        <!-- Fila Líder & Stats Rival -->
+        <div class="arena-row enemy-row">
+          <div class="arena-side">
+            <b>RIVAL</b>
+            <div class="arena-stat">❤️ <span id="p2hpArena">5</span></div>
+            <div class="arena-stat">🛡️ <span id="p2shieldArena">3</span></div>
+            <div class="arena-stat">🪙 <span id="p2donArena">0</span></div>
+            <div class="donpool rival-donpool" id="arenaP2DonPool" style="margin-top:4px;"></div>
+          </div>
+          <div class="arena-leader enemy" id="arenaP2Leader" onclick="selectLeaderTarget(2)" title="Atacar al Líder rival (solo si su campo está despejado)">
+            <span id="arenaP2LeaderArt">👑</span><br>
+            <b id="arenaP2LeaderName">Rival</b><br>
+            💥 5000 + DON<br>
+            <small id="arenaP2LeaderAbility">Esperando</small>
+          </div>
+        </div>
+
+        <!-- Campo de Batalla Rival -->
+        <div class="field-zone-container enemy-zone">
+          <div class="field-zone-label">🛡️ Campo de Personajes Rival</div>
+          <div class="arena-field" id="arenaP2Field"></div>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           LÍNEA CENTRAL DIVISORIA / TURNO
+           ========================================== -->
+      <div class="arena-divider">
+        <div class="divider-line"></div>
+        <div class="turn-banner" id="arenaTurn">⚔️ TU TURNO</div>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- ==========================================
+           2. LADO DEL JUGADOR (PLAYER 1 - TÚ)
+           ========================================== -->
+      <div class="arena-half player-half">
+        <div class="field-side-tag player-tag">
+          <span>🟢 TU LADO (PLAYER 1)</span>
+        </div>
+
+        <!-- Campo de Batalla del Jugador -->
+        <div class="field-zone-container player-zone">
+          <div class="field-zone-label">⚔️ Tu Campo de Personajes</div>
+          <div class="arena-field" id="arenaP1Field"></div>
+        </div>
+
+        <!-- Fila Líder & Stats Jugador -->
+        <div class="arena-row player-row">
+          <div class="arena-side">
+            <b>PLAYER 1</b>
+            <div class="arena-stat">❤️ <span id="p1hpArena">5</span></div>
+            <div class="arena-stat">🛡️ <span id="p1shieldArena">3</span></div>
+            <div class="arena-stat">🪙 <span id="p1donArena">0</span></div>
+          </div>
+          <div class="arena-leader" id="arenaP1Leader" title="Arrastra monedas DON aquí para potenciar a tu Líder">
+            <span id="arenaP1LeaderArt">👑</span><br>
+            <b id="arenaP1LeaderName">Tu Líder</b><br>
+            💥 <span id="arenaP1Power">5000</span><br>
+            <small id="arenaP1LeaderAbility"></small>
+          </div>
+        </div>
+
+        <!-- Zona DON!! Jugador 1 -->
+        <div class="donzone" id="p1donZoneArena">
+          <div class="donzone-header">
+            <span>🪙 TU RESERVA DE MONEDAS DON!!</span>
+            <small style="display:block; opacity:0.85; font-size:0.75rem;">Arrastra las monedas a tus cartas o a tu Líder (+500 ATK cada una)</small>
+          </div>
+          <div class="donpool" id="arenaP1DonPool"></div>
+        </div>
+
+        <!-- Barra de Acciones de Batalla -->
+        <div class="action-bar">
+          <button type="button" class="btn-battle-action btn-end-turn" onclick="endTurn()">⏭️ Terminar Turno</button>
+          <button type="button" class="btn-battle-action" onclick="openDeckBuilder()">🛠️ Ver Mazo</button>
+          <button type="button" class="btn-battle-action" onclick="exportBattleReplay()" aria-label="Exportar replay de la partida">📥 Replay</button>
+          <button type="button" class="btn-battle-action btn-cancel" onclick="confirmExitToMenu()">🏠 Salir al Menú</button>
+        </div>
+
+        <div class="center" id="activeHandLabel"></div>
+        <div class="hand" id="arenaHand"></div>
+      </div>
+    </div>
+
+    <!-- Registro de Batalla Lateral -->
+    <aside class="battle-log">
+      <h3>📜 REGISTRO DE BATALLA</h3>
+      <div id="aiRealtime" class="center"></div>
+      <div class="battle-log-list" id="arenaLog"></div>
+    </aside>
+  </section>
+
+  <!-- Controles Inferiores de Batalla (Solo Robar, Terminar Turno y Reiniciar Partida) -->
+  <div class="bottom-battle-controls center" style="margin: 16px 0;">
+    <button type="button" id="drawBtn" class="btn-battle-action" onclick="drawCard()">🎴 Robar</button>
+    <button type="button" id="endBtn" class="btn-battle-action btn-end-turn" onclick="endTurn()">⏭️ Terminar Turno</button>
+    <button type="button" id="resetBtn" class="btn-battle-action btn-danger" onclick="reset()">🔄 Reiniciar Partida</button>
+  </div>
+  
+  <p class="center">
+    <span class="badge">🪙 DON arrastrable</span> 
+    <span class="badge">🛡️ Escudos</span> 
+    <span class="badge">🛡️ Blocker</span> 
+    <span class="badge">✨ Habilidades activables</span>
+  </p>
+  
+  <h2>🪦 Cementerio</h2>
+  <div class="panel">P1: <span id="p1grave">0</span> · P2: <span id="p2grave">0</span></div>
+  
+  <div class="combo-panel">
+    <b>💥 COMBO</b>
+    <div id="comboStatus">P1: 0 · P2: 0 · Se reinicia al comenzar el siguiente turno.</div>
+  </div>
+  
+  <div class="shadow-panel">
+    <b>🌑 SOMBRAS DEL INFIERNO</b>
+    <div id="shadowStatus">Cada jugador puede usarla 1 vez por partida cuando una carta sea derrotada.</div>
+  </div>
+  
+  <h2>📜 Registro</h2>
+  <div class="log" id="log"></div>
 </div>
-<p class="center"><span class="badge">🪙 DON arrastrable</span> <span class="badge">🛡️ Escudos</span> <span class="badge">🛡️ Blocker</span> <span class="badge">✨ Habilidades activables</span></p>
-<h2>🪦 Cementerio</h2><div class="panel">P1: <span id="p1grave">0</span> · P2: <span id="p2grave">0</span></div><div class="combo-panel"><b>💥 COMBO</b><div id="comboStatus">P1: 0 · P2: 0 · Se reinicia al comenzar el siguiente turno.</div></div><div class="shadow-panel"><b>🌑 SOMBRAS DEL INFIERNO</b><div id="shadowStatus">Cada jugador puede usarla 1 vez por partida cuando una carta sea derrotada.</div></div>
-<h2>📜 Registro</h2><div class="log" id="log"></div>
+
+<!-- ==========================================
+     MODAL DE CONSTRUCTOR DE MAZOS (DECK BUILDER)
+     ========================================== -->
+<!-- ==========================================
+     MODAL DE RESUMEN POST-PARTIDA (REGISTRO OFICIAL DE DUELO TCG)
+     ========================================== -->
+<div id="soloPostGameModal" class="modal solo-system-overlay">
+  <div class="modalbox solo-system-box">
+    <!-- Barra Holográfica Superior del Sistema -->
+    <div class="solo-system-header">
+      <div class="solo-system-tag">
+        <span class="solo-pulse-dot"></span> [ REGISTRO OFICIAL DE DUELO TCG ]
+      </div>
+      <button type="button" class="modal-close-icon solo-close" onclick="closeSoloPostGame()">✕</button>
+    </div>
+
+    <!-- Estandarte Principal de Resultado -->
+    <div class="solo-result-banner" id="soloResultBanner">
+      <div class="solo-banner-icon" id="soloBannerIcon">🏆</div>
+      <div class="solo-banner-texts">
+        <h2 id="soloResultTitle" class="solo-result-title">¡VICTORIA EN EL DUELO!</h2>
+        <div id="soloResultSubtitle" class="solo-result-subtitle">Has dominado el campo de batalla con tu mazo y estrategia</div>
+      </div>
+    </div>
+
+    <!-- Evaluación de Rango del Duelista -->
+    <div class="solo-rank-container">
+      <div class="solo-rank-label">EVALUACIÓN DEL DUELISTA</div>
+      <div class="solo-rank-badge rank-s" id="soloRankBadge">
+        <span class="solo-rank-letter" id="soloRankLetter">S</span>
+        <span class="solo-rank-desc" id="soloRankDesc">GRAN LEYENDA</span>
+      </div>
+    </div>
+
+    <!-- Estadísticas de Combate TCG -->
+    <div class="solo-stats-section">
+      <div class="solo-section-title">📊 ESTADÍSTICAS DEL DUELO</div>
+      <div class="solo-stats-grid">
+        <div class="solo-stat-item">
+          <div class="solo-stat-icon">💥</div>
+          <div class="solo-stat-data">
+            <span class="solo-stat-val" id="soloStatDamage">0</span>
+            <span class="solo-stat-name">Daño Infligido</span>
+          </div>
+        </div>
+        <div class="solo-stat-item">
+          <div class="solo-stat-icon">🃏</div>
+          <div class="solo-stat-data">
+            <span class="solo-stat-val" id="soloStatKills">0</span>
+            <span class="solo-stat-name">Cartas Derrotadas</span>
+          </div>
+        </div>
+        <div class="solo-stat-item">
+          <div class="solo-stat-icon">🪙</div>
+          <div class="solo-stat-data">
+            <span class="solo-stat-val" id="soloStatDon">0</span>
+            <span class="solo-stat-name">DON!! Desplegados</span>
+          </div>
+        </div>
+        <div class="solo-stat-item">
+          <div class="solo-stat-icon">⏳</div>
+          <div class="solo-stat-data">
+            <span class="solo-stat-val" id="soloStatTurns">1</span>
+            <span class="solo-stat-name">Turnos de Duelo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recompensas y Barra de EXP del Duelista -->
+    <div class="solo-rewards-section">
+      <div class="solo-section-title">🎁 RECOMPENSAS DEL DUELO</div>
+      
+      <!-- Progreso de EXP y Nivel de Duelista -->
+      <div class="solo-exp-box">
+        <div class="solo-exp-header">
+          <span class="solo-exp-level" id="soloHunterLevel">👑 Duelista Nivel 1</span>
+          <span class="solo-exp-gained" id="soloExpGained">+500 EXP</span>
+        </div>
+        <div class="solo-exp-bar-bg">
+          <div class="solo-exp-bar-fill" id="soloExpBarFill" style="width: 0%"></div>
+        </div>
+        <div class="solo-level-up-alert" id="soloLevelUpAlert" style="display:none">
+          ✨ ¡SUBIDA DE NIVEL! HAS AUMENTADO TU PRESTIGIO COMO DUELISTA ✨
+        </div>
+      </div>
+
+      <!-- Tarjetas de Botín / Recompensas TCG -->
+      <div class="solo-loot-grid">
+        <div class="solo-loot-card">
+          <div class="solo-loot-icon">📦</div>
+          <div class="solo-loot-info">
+            <b id="soloLootPacks">+10 Sobres</b>
+            <small>Sobres Booster</small>
+          </div>
+        </div>
+        <div class="solo-loot-card">
+          <div class="solo-loot-icon">🪙</div>
+          <div class="solo-loot-info">
+            <b id="soloLootGold">+500 Monedas</b>
+            <small>Oro de Recompensa</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de Acción Adaptados a TCG -->
+    <div class="solo-actions-row">
+      <button type="button" class="btn-solo-primary" id="btnSoloClaimPacks" onclick="claimSoloRewardsAndOpenPacks()">
+        🎁 Reclamar &amp; Abrir Sobres
+      </button>
+      <button type="button" class="btn-solo-secondary" onclick="retrySoloBattle()">
+        🔄 Jugar Nueva Partida
+      </button>
+      <button type="button" class="btn-solo-tertiary" onclick="exitSoloToMenu()">
+        🏠 Menú Principal
+      </button>
+    </div>
+  </div>
 </div>
 
-<div class="modal" id="deckModal"><div class="modalbox">
-<div class="row"><h2 style="margin-right:auto">🛠️ Constructor de mazos</h2><button onclick="closeDeckBuilder();openMainMenu()">🏠 Menú</button></div>
-<p>Tu mazo: <b id="deckCount">0</b>/40 cartas. Máximo 4 copias por carta.</p><div class="set-filter-row"><label>📚 Set:</label><select id="setFilter" onchange="renderDeckBuilder()"><option value="ALL">Todos</option><option value="ORIGINS">SET 01 — ORIGINS</option><option value="AWAKENING">SET 02 — AWAKENING</option><option value="SHADOWS">SET 03 — SHADOWS</option><option value="COLLISION">SET 04 — COLLISION</option><option value="RABBIT_HOLE">SET 05 — RABBIT HOLE</option></select></div>
-<input class="search" id="search" placeholder="🔍 Buscar carta..." oninput="renderDeckBuilder()">
-<div class="deckgrid" id="deckGrid"></div>
-</div></div>
+<div class="modal" id="deckModal">
+  <div class="modalbox">
+    <div class="modal-nav-bar">
+      <button type="button" class="btn-nav-back" id="btnBackFromDeck" onclick="handleDeckBuilderBack()">⬅️ Volver</button>
+      <button type="button" class="modal-close-icon" onclick="handleDeckBuilderBack()">✕</button>
+    </div>
+    
+    <div class="row" style="margin-bottom:12px;">
+      <h2 style="margin-right:auto">🛠️ Constructor de Mazos</h2>
+      <span class="badge badge-gold" style="font-size:1rem; padding:6px 14px;">Mazo: <b id="deckCount">0</b> / 40 cartas</span>
+    </div>
+    <div id="deckValidationMessage" class="deck-validation" role="status">Mazo predeterminado disponible.</div>
+    
+    <p>Construye tu baraja de 40 cartas. Máximo 4 copias de la misma carta.</p>
+    
+    <div class="set-filter-row">
+      <label for="setFilter">📚 Filtrar por Set:</label>
+      <select id="setFilter" onchange="renderDeckBuilder()">
+        <option value="ALL">Todos los Sets</option>
+        <option value="ORIGINS">SET 01 — ORIGINS</option>
+        <option value="AWAKENING">SET 02 — AWAKENING</option>
+        <option value="SHADOWS">SET 03 — SHADOWS</option>
+        <option value="COLLISION">SET 04 — COLLISION</option>
+        <option value="RABBIT_HOLE">SET 05 — RABBIT HOLE</option>
+      </select>
+    </div>
+    
+    <input class="search" id="search" placeholder="🔍 Buscar carta por nombre o habilidad..." oninput="renderDeckBuilder()">
+    
+    <div class="deckgrid" id="deckGrid"></div>
+  </div>
+</div>
 
-
+<!-- Scripts del juego -->
 <script src="js/cards.js"></script>
+<script src="js/rules.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/packs.js"></script>
 <script src="js/accounts.js"></script>
 <script src="js/online.js"></script>
 <script src="js/game.js"></script>
-</body></html>
+</body>
+</html>

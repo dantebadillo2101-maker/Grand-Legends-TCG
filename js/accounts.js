@@ -1,15 +1,51 @@
-window.GLTCG=window.GLTCG||{};
-GLTCG.account={token:localStorage.getItem('GLTCG_AUTH_TOKEN')||'',user:null};
-function accountApi(path,options={}){const h=Object.assign({'Content-Type':'application/json'},options.headers||{});if(GLTCG.account.token)h.Authorization='Bearer '+GLTCG.account.token;const base=typeof getConfiguredServerBase==='function'?getConfiguredServerBase():((location.protocol==='file:')?'http://localhost:3000':location.origin);return fetch(base+path,Object.assign({},options,{headers:h})).then(async r=>{const d=await r.json().catch(()=>({message:'Respuesta inválida.'}));if(!r.ok)throw new Error(d.message||'Error del servidor');return d})}
-function showAccountTab(tab){document.getElementById('loginPanel').style.display=tab==='login'?'block':'none';document.getElementById('registerPanel').style.display=tab==='register'?'block':'none';document.getElementById('loginTab').classList.toggle('active',tab==='login');document.getElementById('registerTab').classList.toggle('active',tab==='register');}
-function openAccount(){document.getElementById('accountModal')?.classList.add('open');showAccountTab('login');if(GLTCG.account.user)renderProfile()}
-function closeAccount(){document.getElementById('accountModal')?.classList.remove('open')}
-function accountMsg(t){const e=document.getElementById('accountMsg');if(e)e.textContent=t}
-async function registerAccount(){const u=document.getElementById('registerUser').value.trim(),p=document.getElementById('registerPass').value,p2=document.getElementById('registerPass2').value;if(p!==p2)return accountMsg('⚠️ Las contraseñas no coinciden.');try{const d=await accountApi('/api/register',{method:'POST',body:JSON.stringify({username:u,password:p})});GLTCG.account.token=d.token;GLTCG.account.user=d.user;localStorage.setItem('GLTCG_AUTH_TOKEN',d.token);accountMsg('✅ Cuenta creada. ¡Empiezas con 10 sobres!');renderProfile()}catch(e){accountMsg('⚠️ '+e.message)}}
-async function loginAccount(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;try{const d=await accountApi('/api/login',{method:'POST',body:JSON.stringify({username:u,password:p})});GLTCG.account.token=d.token;GLTCG.account.user=d.user;localStorage.setItem('GLTCG_AUTH_TOKEN',d.token);accountMsg('✅ Sesión iniciada.');renderProfile()}catch(e){accountMsg('⚠️ '+e.message)}}
-async function loadAccount(){if(!GLTCG.account.token)return;try{const d=await accountApi('/api/me');GLTCG.account.user=d.user}catch{GLTCG.account.token='';localStorage.removeItem('GLTCG_AUTH_TOKEN')}}
-function renderProfile(){const u=GLTCG.account.user;if(!u)return;const e=document.getElementById('profileContent');if(e)e.innerHTML=`<p><b>👤 ${u.username}</b></p><p>🎁 Sobres: ${u.packs}</p><p>🏆 Victorias: ${u.wins} · Derrotas: ${u.losses}</p><p>🎴 Colección: ${(u.collection||[]).length} cartas</p>`;document.getElementById('accountModal')?.classList.remove('open');document.getElementById('profileModal')?.classList.add('open')}
-function closeProfile(){document.getElementById('profileModal')?.classList.remove('open')}
-async function logoutAccount(){try{await accountApi('/api/logout',{method:'POST'})}catch{}GLTCG.account={token:'',user:null};localStorage.removeItem('GLTCG_AUTH_TOKEN');closeProfile()}
-async function manualSave(){if(!GLTCG.account.user)return;try{await accountApi('/api/profile',{method:'POST',body:JSON.stringify(GLTCG.account.user)});accountMsg('💾 Guardado en el servidor.')}catch(e){accountMsg('⚠️ '+e.message)}}
-window.addEventListener('DOMContentLoaded',loadAccount);
+/* Grand Legends TCG - Módulo Cuentas y Autenticación */
+window.GLTCG = window.GLTCG || {};
+GLTCG.account = { token: localStorage.getItem('GLTCG_AUTH_TOKEN') || '', user: null };
+
+function accountApi(path, options = {}) {
+  const h = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+  if (GLTCG.account.token) h.Authorization = 'Bearer ' + GLTCG.account.token;
+  const base = typeof getConfiguredServerBase === 'function' ? getConfiguredServerBase() : ((location.protocol === 'file:') ? 'http://localhost:3000' : location.origin);
+  return fetch(base + path, Object.assign({}, options, { headers: h })).then(async r => {
+    const d = await r.json().catch(() => ({ message: 'Respuesta inválida.' }));
+    if (!r.ok) throw new Error(d.message || 'Error del servidor');
+    return d;
+  });
+}
+
+function openAccount() {
+  if (typeof openPlayerHub === 'function') {
+    openPlayerHub('account');
+  }
+}
+
+function closeAccount() {
+  if (typeof closePlayerHub === 'function') {
+    closePlayerHub();
+  }
+}
+
+function openProfile() {
+  if (typeof openPlayerHub === 'function') {
+    openPlayerHub('profile');
+  }
+}
+
+function closeProfile() {
+  if (typeof closePlayerHub === 'function') {
+    closePlayerHub();
+  }
+}
+
+async function loadAccount() {
+  if (!GLTCG.account.token) return;
+  try {
+    const d = await accountApi('/api/me');
+    GLTCG.account.user = d.user;
+  } catch {
+    GLTCG.account.token = '';
+    localStorage.removeItem('GLTCG_AUTH_TOKEN');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', loadAccount);
