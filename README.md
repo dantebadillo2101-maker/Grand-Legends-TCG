@@ -10,6 +10,7 @@ se estaran haciendo actualizaciones cada cierto tiempo ademas , en las cuales se
 - SET 03 — Shadows
 - SET 04 - Collision
 - SET 05 - RABBIT HOLE
+- set 06 - EVOLUTION OF HOLE
 - VS IA
 - 2 jugadores local
 - Deck Builder
