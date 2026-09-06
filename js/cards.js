@@ -277,7 +277,7 @@ GLTCG.SETS={
  AWAKENING:{id:'AWAKENING',name:'SET 02 — AWAKENING',cards:SET_02_CARDS,leaders:SET_02_LEADERS,theme:'✨ Despertar'},
  SHADOWS:{id:'SHADOWS',name:'SET 03 — SHADOWS',cards:SET_03_CARDS,leaders:SET_03_LEADERS,theme:'🌑 Sombras del Infierno'},
  COLLISION:{id:'COLLISION',name:'SET 04 — COLLISION',cards:SET_04_CARDS,leaders:SET_04_LEADERS,theme:'💥 Combo'},
- RABBIT_HOLE:{id:'RABBIT_HOLE',name:'SET 05 — RABBIT HOLE',cards:SET_05_CARDS,leaders:SET_05_LEADERS,theme:'🐇 Sobrevive al borde de la derrota'}
+ RABBIT_HOLE:{id:'RABBIT_HOLE',name:'SET 05 — RABBIT HOLE',cards:SET_05_CARDS,leaders:SET_05_LEADERS,theme:'🐇 Sobrevive al borde de la derrota'},
 };
 
 
@@ -347,16 +347,81 @@ const SET_06_CARDS=[
  {id:'E59',name:'Archivo del Otro Lado',cost:5,power:0,type:'Recurso',art:'📚🌌',ability:'Roba 3 y recupera una carta de Set 05/06 del cementerio.',effect:'draw3RecoverEvolution',rarity:'Ultra Rara',traits:['Evolution']},
  {id:'E60',name:'Núcleo de la Evolución Perfecta',cost:7,power:0,type:'Recurso',art:'💎🧬',ability:'Recupera 2 DON usados, roba 2 y mira las 5 primeras cartas.',effect:'perfectEvolutionResource',rarity:'Legendaria',traits:['Evolution','Legendaria']}
 ];
-const ALL_LEADERS_V6=[...SET_01_LEADERS,...SET_02_LEADERS,...SET_03_LEADERS,...SET_04_LEADERS,...SET_05_LEADERS,...SET_06_LEADERS];
-const ALL_CARDS_V6=[...SET_01_CARDS,...SET_02_CARDS,...SET_03_CARDS,...SET_04_CARDS,...SET_05_CARDS,...SET_06_CARDS];
-GLTCG.LEADERS=ALL_LEADERS_V6;
-GLTCG.CARD_LIBRARY=ALL_CARDS_V6;
-GLTCG.SETS={
- ORIGINS:{id:'ORIGINS',name:'SET 01 — ORIGINS',cards:SET_01_CARDS,leaders:SET_01_LEADERS,theme:'⚔️ Fundamentos'},
- AWAKENING:{id:'AWAKENING',name:'SET 02 — AWAKENING',cards:SET_02_CARDS,leaders:SET_02_LEADERS,theme:'✨ Despertar'},
- SHADOWS:{id:'SHADOWS',name:'SET 03 — SHADOWS',cards:SET_03_CARDS,leaders:SET_03_LEADERS,theme:'🌑 Sombras del Infierno'},
- COLLISION:{id:'COLLISION',name:'SET 04 — COLLISION',cards:SET_04_CARDS,leaders:SET_04_LEADERS,theme:'💥 Combo'},
- RABBIT_HOLE:{id:'RABBIT_HOLE',name:'SET 05 — RABBIT HOLE',cards:SET_05_CARDS,leaders:SET_05_LEADERS,theme:'🐇 Sobrevive al borde de la derrota'},
- EVOLUTION_OF_HOLE:{id:'EVOLUTION_OF_HOLE',name:'SET 06 — EVOLUTION OF HOLE',cards:SET_06_CARDS,leaders:SET_06_LEADERS,theme:'🧬 Evolución Alarmante'}
+
+
+// ==================== SET 07: LOS KOREANOS DEL FIN ====================
+// Expansión inspirada en una formación musical de 7 protagonistas. Mecánica: Canto Infernal.
+const SET_07_LEADERS=[
+ {id:'T01',name:'RM, Voz del Fin',art:'🎤🟣',color:'Morado',life:5,ability:'Una vez por turno: activa Canto Infernal. Después, mira las 3 primeras cartas de tu mazo y reordénalas.',cantoAbility:'cantoRM'},
+ {id:'T02',name:'SUGA, Maestro del Caos',art:'🎤🟡',color:'Amarillo',life:5,ability:'Una vez por turno: activa Canto Infernal. Si sale 6, recupera 1 DON usado; si sale impar, gana +500 este turno.',cantoAbility:'cantoSUGA'},
+ {id:'T03',name:'Jin, Príncipe del Fin',art:'🎤🔴',color:'Rojo',life:5,ability:'Una vez por turno: activa Canto Infernal. Si sale par, un personaje tuyo gana +500; si sale impar, tu Líder gana +1000 este turno.',cantoAbility:'cantoJin'},
+ {id:'T04',name:'j-hope, Luz del Último Día',art:'🎤🟢',color:'Verde',life:5,ability:'Una vez por turno: activa Canto Infernal. Con cualquier resultado, recupera 1 DON usado.',cantoAbility:'cantoJhope'},
+ {id:'T05',name:'Jimin, Melodía del Abismo',art:'🎤🩷',color:'Rosa',life:5,ability:'Una vez por turno: activa Canto Infernal. Si sale par, roba 1 carta rival y puedes poner 1 carta de tu mano sobre tu mazo; si sale impar, el rival roba 1 de tu mano y tú robas 1.',cantoAbility:'cantoJimin'},
+ {id:'T06',name:'V, Sombra del Fin',art:'🎤⚫',color:'Negro',life:5,ability:'Una vez por turno: activa Canto Infernal. Si sale impar y una carta fue al cementerio este turno, recupera 1 carta de tu cementerio.',cantoAbility:'cantoV'},
+ {id:'T07',name:'Jungkook, Leyenda Dorada',art:'🎤🟡✨',color:'Dorado',life:5,ability:'Una vez por turno: activa Canto Infernal. Con 2, 4 o 6 roba 1 carta rival; con 6 además roba 1 carta y gana +1000 este turno. Con resultado impar, el rival roba 1 de tu mano.',cantoAbility:'cantoJungkook'}
+];
+
+const SET_07_CARDS=[
+{id:'T08',name:'RM, Estratega Morado',cost:2,power:800,type:'Personaje',art:'🧠🟣',ability:'Al entrar: mira las 3 primeras cartas de tu mazo.',onPlay:'scry3',rarity:'Común',traits:['KoreanOS','Morado']},
+{id:'T09',name:'RM, Arquitecto del Caos',cost:4,power:1600,type:'Personaje',art:'🏗️🟣',ability:'Cuando uses Canto Infernal, gana +500 este turno.',onCanto:'boost500',rarity:'Rara',traits:['KoreanOS']},
+{id:'T10',name:'Jin, Caballero Carmesí',cost:3,power:1300,type:'Personaje',art:'⚔️🔴',ability:'Al entrar: un enemigo pierde 500 poder este turno.',onPlay:'debuff500',rarity:'Común',traits:['KoreanOS','Rojo']},
+{id:'T11',name:'Jin, Banquete Final',cost:5,power:2200,type:'Personaje',art:'🍽️🔴',ability:'Al entrar: roba 2 cartas.',onPlay:'draw2',rarity:'Rara',traits:['KoreanOS']},
+{id:'T12',name:'SUGA, Productor del Abismo',cost:3,power:1200,type:'Personaje',art:'🎛️🟡',ability:'Una vez por turno: mira la carta superior de tu mazo.',active:'scry1',rarity:'Común',traits:['KoreanOS']},
+{id:'T13',name:'SUGA, Último Ritmo',cost:5,power:2100,type:'Personaje',art:'🎹🟡',ability:'Cuando uses Canto Infernal, recupera 1 DON usado si el resultado es 6.',onCanto:'donOnSix',rarity:'Rara',traits:['KoreanOS']},
+{id:'T14',name:'j-hope, Guerrero de la Esperanza',cost:3,power:1400,type:'Personaje',art:'☀️🟢',ability:'Si tienes 2 ❤️ o menos, gana +500 poder.',onPlay:'lowLife500',rarity:'Común',traits:['KoreanOS']},
+{id:'T15',name:'j-hope, Danza del Renacimiento',cost:5,power:2300,type:'Personaje',art:'💃🟢',ability:'Al entrar: recupera 1 escudo si tienes menos de 3.',onPlay:'healshield',rarity:'Rara',traits:['KoreanOS']},
+{id:'T16',name:'Jimin, Cantante del Vacío',cost:2,power:900,type:'Personaje',art:'🎶🩷',ability:'Al entrar: roba 1 carta.',onPlay:'draw1',rarity:'Común',traits:['KoreanOS']},
+{id:'T17',name:'Jimin, Voz Hipnótica',cost:4,power:1700,type:'Personaje',art:'🎵🩷',ability:'Una vez por turno: un enemigo pierde 500 poder este turno.',active:'debuff500',rarity:'Rara',traits:['KoreanOS']},
+{id:'T18',name:'V, Señor de las Sombras',cost:3,power:1500,type:'Personaje',art:'🌑⚫',ability:'Si una carta fue derrotada este turno, gana +500 poder.',onPlay:'graveThisTurn500',rarity:'Común',traits:['KoreanOS','Sombra']},
+{id:'T19',name:'V, Eclipse Final',cost:6,power:2800,type:'Personaje',art:'🌘⚫',ability:'Al entrar: devuelve a la mano un enemigo de 1500 o menos.',onPlay:'bounce1500',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T20',name:'Jungkook, Guerrero Dorado',cost:3,power:1400,type:'Personaje',art:'🥊🟡',ability:'Puede atacar al Líder si no hay defensores.',canAttackLeader:true,rarity:'Común',traits:['KoreanOS']},
+{id:'T21',name:'Jungkook, Última Canción',cost:5,power:2400,type:'Personaje',art:'🎤✨',ability:'Al entrar: roba 1 y puede atacar inmediatamente.',onPlay:'draw1Ready',rarity:'Rara',traits:['KoreanOS']},
+{id:'T22',name:'RM, Cerebro del Grupo',cost:5,power:1900,type:'Personaje',art:'🧠👑',ability:'Al entrar: mira las 5 primeras cartas y añade 1 a tu mano.',onPlay:'searchTop5',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T23',name:'Jin, Escudo Carmesí',cost:4,power:1800,type:'Personaje',art:'🛡️🔴',ability:'🛡️ BLOCKER.',blocker:true,rarity:'Rara',traits:['KoreanOS']},
+{id:'T24',name:'SUGA, Dado Maldito',cost:4,power:1600,type:'Personaje',art:'🎲🟡',ability:'Al entrar: activa Canto Infernal sin activar la habilidad del Líder.',onPlay:'cantoExtra',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T25',name:'j-hope, Corazón Verde',cost:4,power:1800,type:'Personaje',art:'💚🟢',ability:'Tus otros personajes ganan +200 poder.',onPlay:'team200',rarity:'Rara',traits:['KoreanOS']},
+{id:'T26',name:'Jimin, Espejo Rosa',cost:3,power:1200,type:'Personaje',art:'🪞🩷',ability:'Cuando el rival te robe una carta, roba 2.',onOpponentSteal:'draw2',rarity:'Rara',traits:['KoreanOS']},
+{id:'T27',name:'V, Bestia Nocturna',cost:5,power:2300,type:'Personaje',art:'🐺⚫',ability:'Si tienes menos cartas en mano que el rival, gana +700 poder.',onPlay:'handGap700',rarity:'Rara',traits:['KoreanOS']},
+{id:'T28',name:'Jungkook, Forma Perfecta',cost:7,power:3300,type:'Personaje',art:'🌟🟡',ability:'Al entrar: recupera 1 DON usado y roba 1 carta.',onPlay:'donRecoverDraw',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T29',name:'RM, Comandante del Fin',cost:6,power:2700,type:'Personaje',art:'🎖️🟣',ability:'Cuando uses Canto Infernal, puedes volver a activar 1 habilidad activa usada de un personaje.',onCanto:'refreshAbility',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T30',name:'Jin, Rey Carmesí',cost:7,power:3500,type:'Personaje',art:'👑🔴',ability:'Al entrar: derrota un enemigo de 1800 o menos.',onPlay:'ko1800',rarity:'Ultra Rara',traits:['KoreanOS']},
+{id:'T31',name:'SUGA, Señor de los Dados',cost:6,power:2600,type:'Personaje',art:'🎲👑',ability:'Una vez por turno: tira Canto Infernal sin activar la habilidad del Líder; aplica solo el robo.',active:'cantoStealOnly',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T32',name:'j-hope, Sol Final',cost:7,power:3200,type:'Personaje',art:'☀️🟢',ability:'Al entrar: recupera hasta 2 DON usados.',onPlay:'donRecover2',rarity:'Ultra Rara',traits:['KoreanOS']},
+{id:'T33',name:'Jimin, Ángel del Último Canto',cost:6,power:2800,type:'Personaje',art:'👼🩷',ability:'Al entrar: recupera 1 escudo y roba 1 carta.',onPlay:'shieldDraw',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T34',name:'V, Entidad de la Oscuridad',cost:8,power:3900,type:'Personaje',art:'👁️⚫',ability:'Al entrar: todos los enemigos pierden 700 poder este turno.',onPlay:'debuffAll700',rarity:'Ultra Rara',traits:['KoreanOS']},
+{id:'T35',name:'Jungkook, Campeón Dorado',cost:8,power:4100,type:'Personaje',art:'🏆🟡',ability:'Al entrar: puede atacar inmediatamente y gana +500 este turno.',onPlay:'drawlessReadyBoost',rarity:'Ultra Rara',traits:['KoreanOS']},
+{id:'T36',name:'BTS, La Última Formación',cost:9,power:4500,type:'Personaje',art:'7️⃣🎤',ability:'Al entrar: roba 2 cartas y recupera 1 DON usado.',onPlay:'draw2Don',rarity:'Legendaria',traits:['KoreanOS','Seven']},
+{id:'T37',name:'Los 7 del Fin',cost:10,power:5000,type:'Personaje',art:'7️⃣🌌',ability:'Una vez por partida: activa Canto Infernal dos veces y conserva el mejor resultado para el dueño.',active:'doubleCanto',rarity:'Legendaria',traits:['KoreanOS','Seven']},
+{id:'T38',name:'Primer Canto',cost:1,power:0,type:'Evento',art:'🎤1️⃣',ability:'Activa Canto Infernal.',effect:'cantoInfernal',rarity:'Común',traits:['KoreanOS']},
+{id:'T39',name:'Melodía Maldita',cost:2,power:0,type:'Evento',art:'🎵☠️',ability:'Activa Canto Infernal. Si sale par, además roba 1 carta.',effect:'cantoDrawEven',rarity:'Rara',traits:['KoreanOS']},
+{id:'T40',name:'Segundo Lanzamiento',cost:2,power:0,type:'Evento',art:'🎲2️⃣',ability:'Tira Canto Infernal. Si sale 6, recupera 1 DON usado.',effect:'cantoSixDon',rarity:'Rara',traits:['KoreanOS']},
+{id:'T41',name:'Voz del Abismo',cost:3,power:0,type:'Evento',art:'🌑🎤',ability:'Todos los enemigos pierden 500 poder este turno.',effect:'debuffAll500',rarity:'Común',traits:['KoreanOS']},
+{id:'T42',name:'Concierto Infernal',cost:4,power:0,type:'Evento',art:'🔥🎤',ability:'Activa Canto Infernal dos veces. Resuelve ambos resultados.',effect:'doubleCanto',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T43',name:'Robo Prohibido',cost:3,power:0,type:'Evento',art:'🖐️🎴',ability:'Roba 1 carta aleatoria de la mano rival.',effect:'stealRandom',rarity:'Rara',traits:['KoreanOS']},
+{id:'T44',name:'El Precio del Canto',cost:2,power:0,type:'Evento',art:'⚖️🎤',ability:'Activa Canto Infernal. Si el resultado es impar, roba 1 carta.',effect:'cantoDrawOdd',rarity:'Rara',traits:['KoreanOS']},
+{id:'T45',name:'Siete Voces',cost:4,power:0,type:'Evento',art:'7️⃣🎶',ability:'Tus personajes ganan +300 poder este turno y +1 Combo.',effect:'team300Combo',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T46',name:'Canción del Destino',cost:5,power:0,type:'Evento',art:'🎼🌌',ability:'Mira las 5 primeras cartas, añade 1 a tu mano y devuelve el resto al mazo.',effect:'searchTop5',rarity:'Ultra Rara',traits:['KoreanOS']},
+{id:'T47',name:'Último Escenario',cost:5,power:0,type:'Evento',art:'🏟️🔥',ability:'Un personaje tuyo puede atacar inmediatamente y gana +1000.',effect:'readyBoost1000',rarity:'Súper Rara',traits:['KoreanOS']},
+{id:'T48',name:'Caos Coreano',cost:6,power:0,type:'Evento',art:'🌪️🎤',ability:'Activa Canto Infernal y todos los enemigos pierden 700.',effect:'cantoDebuffAll',rarity:'Ultra Rara',traits:['KoreanOS']},
+{id:'T49',name:'La Séptima Voz',cost:6,power:0,type:'Evento',art:'7️⃣🗣️',ability:'Activa Canto Infernal dos veces y roba 1 carta.',effect:'doubleCantoDraw',rarity:'Ultra Rara',traits:['KoreanOS','Seven']},
+{id:'T50',name:'Himno del Fin',cost:7,power:0,type:'Evento',art:'🎶🌑',ability:'Roba 3 cartas, luego activa Canto Infernal.',effect:'draw3Canto',rarity:'Legendaria',traits:['KoreanOS']},
+{id:'T51',name:'Sin Escape',cost:5,power:0,type:'Evento',art:'⛓️🎤',ability:'Derrota un enemigo de 2200 o menos.',effect:'ko2200',rarity:'Ultra Rara',traits:['KoreanOS']},
+{id:'T52',name:'El Último Dado',cost:8,power:0,type:'Evento',art:'🎲🌌',ability:'Activa Canto Infernal tres veces. Luego roba 2 cartas.',effect:'tripleCantoDraw2',rarity:'Legendaria',traits:['KoreanOS']},
+{id:'T53',name:'Micrófono Maldito',cost:1,power:0,type:'Recurso',art:'🎙️☠️',ability:'El próximo Canto Infernal que actives suma +1 al dado; un 6 modificado se considera 6.',effect:'cantoPlusOne',rarity:'Común',traits:['KoreanOS']},
+{id:'T54',name:'Auricular del Fin',cost:2,power:0,type:'Recurso',art:'🎧🌑',ability:'Roba 1 carta y, si tienes menos cartas que el rival, roba otra.',effect:'drawConditional',rarity:'Común',traits:['KoreanOS']},
+{id:'T55',name:'Ritmo Oscuro',cost:3,power:0,type:'Recurso',art:'🥁⚫',ability:'Un enemigo pierde 700 poder este turno y tú ganas +1 Combo.',effect:'debuff700Combo',rarity:'Rara',traits:['KoreanOS']},
+{id:'T56',name:'Luz del Escenario',cost:3,power:0,type:'Recurso',art:'💡🎤',ability:'Recupera 1 DON usado y roba 1 carta.',effect:'donRecoverDraw',rarity:'Rara',traits:['KoreanOS']},
+{id:'T57',name:'Dado Infernal',cost:2,power:0,type:'Recurso',art:'🎲🔥',ability:'Activa Canto Infernal solo para resolver el robo.',effect:'cantoStealOnly',rarity:'Rara',traits:['KoreanOS']},
+{id:'T58',name:'Corazón de los Siete',cost:4,power:0,type:'Recurso',art:'❤️7️⃣',ability:'Roba 2 cartas y recupera 1 escudo si tienes menos de 3.',effect:'draw2Shield',rarity:'Súper Rara',traits:['KoreanOS','Seven']},
+{id:'T59',name:'Escenario Final',cost:5,power:0,type:'Recurso',art:'🏟️✨',ability:'Recupera hasta 2 DON usados y roba 1 carta.',effect:'donRecover2Draw',rarity:'Ultra Rara',traits:['KoreanOS']},
+{id:'T60',name:'El Último Concierto',cost:7,power:0,type:'Recurso',art:'🎤🌌7️⃣',ability:'Roba 3 cartas, recupera 2 DON usados y activa Canto Infernal.',effect:'ultimateConcert',rarity:'Legendaria',traits:['KoreanOS','Seven']}
+];
+const ALL_LEADERS_V7=[...SET_01_LEADERS,...SET_02_LEADERS,...SET_03_LEADERS,...SET_04_LEADERS,...SET_05_LEADERS,...SET_06_LEADERS,...SET_07_LEADERS];
+const ALL_CARDS_V7=[...SET_01_CARDS,...SET_02_CARDS,...SET_03_CARDS,...SET_04_CARDS,...SET_05_CARDS,...SET_06_CARDS,...SET_07_CARDS];
+GLTCG.LEADERS=ALL_LEADERS_V7; GLTCG.CARD_LIBRARY=ALL_CARDS_V7;
+GLTCG.SETS={...GLTCG.SETS,
+ EVOLUTION_OF_HOLE:{id:'EVOLUTION_OF_HOLE',name:'SET 06 — EVOLUTION OF HOLE',cards:SET_06_CARDS,leaders:SET_06_LEADERS,theme:'🧬 Evolución Alarmante'},
+ LOS_KOREANOS_DEL_FIN:{id:'LOS_KOREANOS_DEL_FIN',name:'SET 07 — LOS KOREANOS DEL FIN',cards:SET_07_CARDS,leaders:SET_07_LEADERS,theme:'🎤 Canto Infernal — el azar decide quién roba.'}
 };
-GLTCG.SET_01=GLTCG.SETS.ORIGINS;GLTCG.SET_02=GLTCG.SETS.AWAKENING;GLTCG.SET_03=GLTCG.SETS.SHADOWS;GLTCG.SET_04=GLTCG.SETS.COLLISION;GLTCG.SET_05=GLTCG.SETS.RABBIT_HOLE;GLTCG.SET_06=GLTCG.SETS.EVOLUTION_OF_HOLE;
+GLTCG.SET_06=GLTCG.SETS.EVOLUTION_OF_HOLE;
+GLTCG.SET_07=GLTCG.SETS.LOS_KOREANOS_DEL_FIN;

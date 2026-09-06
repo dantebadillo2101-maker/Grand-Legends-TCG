@@ -85,6 +85,9 @@ let evolutionUsedThisTurnP1 = false, evolutionUsedThisTurnP2 = false;
 let shadowsDisabledP1 = false, shadowsDisabledP2 = false;
 let evolutionNextBoostP1 = false, evolutionNextBoostP2 = false;
 let evolutionImmediateAttackUsedP1 = false, evolutionImmediateAttackUsedP2 = false;
+let cantoUsedP1 = false, cantoUsedP2 = false;
+let cantoModifierP1 = 0, cantoModifierP2 = 0;
+let cantoTurnHistoryP1 = [], cantoTurnHistoryP2 = [];
 let lastResolvedAbility = null;
 let resolvingRepeatedAbility = false;
 let battleEventHistory = [];
@@ -389,13 +392,13 @@ function renderLeaderChoices(player = 1) {
   const filter = typeof currentLeaderFilter !== 'undefined' ? currentLeaderFilter : 'ALL';
   const list = LEADERS.filter(l => {
     if (filter === 'ALL') return true;
-    const s = l.id.startsWith('A') ? 'AWAKENING' : l.id.startsWith('S') ? 'SHADOWS' : l.id.startsWith('C') ? 'COLLISION' : l.id.startsWith('R') ? 'RABBIT HOLE' : l.id.startsWith('E') ? 'EVOLUTION OF HOLE' : 'ORIGINS';
+    const s = l.id.startsWith('A') ? 'AWAKENING' : l.id.startsWith('S') ? 'SHADOWS' : l.id.startsWith('C') ? 'COLLISION' : l.id.startsWith('R') ? 'RABBIT HOLE' : l.id.startsWith('E') ? 'EVOLUTION OF HOLE' : l.id.startsWith('T') ? 'LOS KOREANOS DEL FIN' : 'ORIGINS';
     return s === filter;
   });
   list.forEach(l => {
     const e = document.createElement('div');
     e.className = 'leader-choice';
-    const leaderSet = l.id.startsWith('A') ? 'AWAKENING' : l.id.startsWith('S') ? 'SHADOWS' : l.id.startsWith('C') ? 'COLLISION' : l.id.startsWith('R') ? 'RABBIT HOLE' : l.id.startsWith('E') ? 'EVOLUTION OF HOLE' : 'ORIGINS';
+    const leaderSet = l.id.startsWith('A') ? 'AWAKENING' : l.id.startsWith('S') ? 'SHADOWS' : l.id.startsWith('C') ? 'COLLISION' : l.id.startsWith('R') ? 'RABBIT HOLE' : l.id.startsWith('E') ? 'EVOLUTION OF HOLE' : l.id.startsWith('T') ? 'LOS KOREANOS DEL FIN' : 'ORIGINS';
     e.innerHTML = '<div class="leader-choice-art">' + l.art + '</div>' +
                   '<h2>' + l.name + '</h2>' +
                   '<div class="badge">' + leaderSet + ' · ' + l.color + '</div>' +
@@ -557,7 +560,7 @@ function closeSets() {
 }
 
 function setOfCard(c) {
-  if (c && c.id) return c.id.startsWith('A') ? 'AWAKENING' : c.id.startsWith('S') ? 'SHADOWS' : c.id.startsWith('C') ? 'COLLISION' : c.id.startsWith('R') ? 'RABBIT_HOLE' : c.id.startsWith('E') ? 'EVOLUTION_OF_HOLE' : 'ORIGINS';
+  if (c && c.id) return c.id.startsWith('A') ? 'AWAKENING' : c.id.startsWith('S') ? 'SHADOWS' : c.id.startsWith('C') ? 'COLLISION' : c.id.startsWith('R') ? 'RABBIT_HOLE' : c.id.startsWith('E') ? 'EVOLUTION_OF_HOLE' : c.id.startsWith('T') ? 'LOS_KOREANOS_DEL_FIN' : 'ORIGINS';
   return 'ORIGINS';
 }
 
@@ -927,6 +930,152 @@ function drawP1() {
 
 function drawP2() {
   if (p2Deck.length) aiHand.push(p2Deck.pop());
+}
+
+/* ==========================================================================
+   SET 07 — CANTO INFERNAL
+   Par  -> el jugador roba 1 carta aleatoria de la mano rival.
+   Impar -> el rival roba 1 carta aleatoria de la mano del jugador.
+   El modificador +1 afecta solo al siguiente Canto de ese jugador.
+   ========================================================================== */
+function randomIndex(length) {
+  return length > 0 ? Math.floor(Math.random() * length) : -1;
+}
+
+function stealRandomHandCard(thief, victim) {
+  const thiefHand = thief === 1 ? hand : aiHand;
+  const victimHand = victim === 1 ? hand : aiHand;
+  if (!victimHand.length) return null;
+  const index = randomIndex(victimHand.length);
+  if (index < 0) return null;
+  const card = victimHand.splice(index, 1)[0];
+  thiefHand.push(card);
+
+  // Set 07 — cartas que reaccionan al robo del rival.
+  const thiefField = thief === 1 ? p1Field : p2Field;
+  thiefField.forEach(unit => {
+    if (unit && unit.onOpponentSteal === 'draw2') {
+      if (thief === 1) { drawP1(); drawP1(); }
+      else { drawP2(); drawP2(); }
+      log('🪞 ' + unit.name + ': robaste una carta, así que robas 2 más.');
+    }
+  });
+
+  return card;
+}
+
+function resolveCantoRoll(player, options = {}) {
+  const modifier = player === 1 ? cantoModifierP1 : cantoModifierP2;
+  const rawRoll = Math.floor(Math.random() * 6) + 1;
+  const roll = Math.min(6, Math.max(1, rawRoll + modifier));
+
+  if (player === 1) cantoModifierP1 = 0;
+  else cantoModifierP2 = 0;
+
+  const ownHand = player === 1 ? hand : aiHand;
+  const enemyHand = player === 1 ? aiHand : hand;
+  const forceSteal = !!options.forceSteal;
+  const even = roll % 2 === 0;
+  let stolen = null;
+
+  log('🎤 Canto Infernal: salió ' + roll + (modifier ? ' (dado modificado).' : '.'));
+
+  if (forceSteal || even) {
+    stolen = stealRandomHandCard(player, player === 1 ? 2 : 1);
+    if (stolen) log('🎴 ¡Robo Infernal! ' + (player === 1 ? 'Robaste' : 'La IA robó') + ' una carta aleatoria de la mano rival.');
+    else log('🎴 El resultado era favorable, pero la mano rival estaba vacía.');
+  } else {
+    stolen = stealRandomHandCard(player === 1 ? 2 : 1, player);
+    if (stolen) log('😈 ¡El canto se volvió contra ti! ' + (player === 1 ? 'El rival robó' : 'Tú robaste') + ' una carta de la mano.');
+    else log('😈 El resultado era desfavorable, pero tu mano estaba vacía.');
+  }
+
+  const history = player === 1 ? cantoTurnHistoryP1 : cantoTurnHistoryP2;
+  history.push({ turn, roll, rawRoll, modifier, favorable: forceSteal || even, stolenId: stolen?.id || null });
+  if (history.length > 30) history.shift();
+
+  return roll;
+}
+
+function useCantoInfernal(player = 1, options = {}) {
+  if (gameOver) return null;
+  const isP1 = player === 1;
+  const leader = isP1 ? selectedLeader : aiLeader;
+  if (!leader?.id?.startsWith('T')) {
+    log('⚠️ Canto Infernal solo está disponible con un Líder de Set 07.');
+    return null;
+  }
+
+  // La habilidad del Líder es una vez por turno. Las cartas pueden llamar
+  // directamente a resolveCantoRoll sin consumir este indicador.
+  if (!options.fromCard && !options.fromAI && ((isP1 && cantoUsedP1) || (!isP1 && cantoUsedP2))) {
+    log('🎤 ' + leader.name + ': Canto Infernal ya fue usado este turno.');
+    return null;
+  }
+
+  if (!options.fromCard && !options.fromAI) {
+    if (isP1 && !canPlay()) return null;
+    if (!isP1 && localMode === 'pvp' && active !== 2) return null;
+    if (isP1) cantoUsedP1 = true;
+    else cantoUsedP2 = true;
+  }
+
+  const roll = resolveCantoRoll(player, options);
+
+  // Efectos específicos de los 7 líderes.
+  if (leader.id === 'T01') {
+    if (isP1) { const top = hand.length ? hand[hand.length - 1] : null; if (top) log('🟣 RM: revisas tu carta superior de la mano: ' + top.name + '.'); }
+    else { const top = aiHand.length ? aiHand[aiHand.length - 1] : null; if (top) log('🟣 RM (IA): reorganiza su mano tras el Canto.'); }
+  } else if (leader.id === 'T02') {
+    if (roll === 6) recoverUsedDon(player, 1);
+    if (roll % 2 === 1) {
+      const field = isP1 ? p1Field : p2Field;
+      const unit = field[field.length - 1];
+      if (unit) unit.tempBoost = (unit.tempBoost || 0) + 500;
+    }
+  } else if (leader.id === 'T03') {
+    const field = isP1 ? p1Field : p2Field;
+    if (roll % 2 === 0) {
+      const unit = field[field.length - 1];
+      if (unit) unit.tempBoost = (unit.tempBoost || 0) + 500;
+    } else {
+      if (isP1) boost += 1000; else p2Boost += 1000;
+    }
+  } else if (leader.id === 'T04') {
+    recoverUsedDon(player, 1);
+  } else if (leader.id === 'T05') {
+    if (roll % 2 === 0) {
+      // El robo ya fue resuelto por el núcleo del Canto. Coloca opcionalmente
+      // una carta de tu mano en el mazo como parte del efecto del líder.
+      const ownHandNow = isP1 ? hand : aiHand;
+      if (ownHandNow.length) {
+        const card = ownHandNow.pop();
+        const deck = isP1 ? p1Deck : p2Deck;
+        deck.push(card);
+        log('🩷 Jimin: una carta de tu mano volvió al fondo de tu mazo.');
+      }
+    } else {
+      if (isP1) drawP1(); else drawP2();
+    }
+  } else if (leader.id === 'T06') {
+    const grave = isP1 ? p1Grave : p2Grave;
+    if (roll % 2 === 1 && grave.length) {
+      const card = grave.pop();
+      if (isP1) hand.push(card); else aiHand.push(card);
+      log('⚫ V: recuperó ' + card.name + ' del cementerio.');
+    }
+  } else if (leader.id === 'T07') {
+    if (roll % 2 === 0) {
+      if (roll === 6) { if (isP1) drawP1(); else drawP2(); }
+      // El robo principal ya ocurrió; el 6 añade una carta adicional.
+      const field = isP1 ? p1Field : p2Field;
+      const unit = field[field.length - 1];
+      if (roll === 6 && unit) unit.tempBoost = (unit.tempBoost || 0) + 1000;
+    }
+  }
+
+  if (!options.silent) render();
+  return roll;
 }
 
 function drawDon(p) {
@@ -1398,6 +1547,7 @@ function damageShield(player, n) {
   }
 }
 
+
 function chooseEnemyIndex(maxPower = Infinity, player = 1) {
   const field = player === 1 ? p2Field : p1Field;
   if (!field.length) return -1;
@@ -1588,6 +1738,39 @@ function applyCardEffect(c, player = 1, context = {}) {
   else if (e === 'recoverDon1' || e === 'recoverDon2') { const d = player === 1 ? p1DonDeck : p2DonDeck, r = player === 1 ? p1DonReserve : p2DonReserve; const n = e === 'recoverDon2' ? 2 : 1; for(let i=0;i<n && d.length;i++) r.push(d.pop()); }
   else if (e === 'draw3RecoverEvolution') { draw(); draw(); draw(); const found = [...ownGrave].reverse().find(x => x.id && (x.id.startsWith('R') || x.id.startsWith('E'))); if (found) { ownGrave.splice(ownGrave.indexOf(found),1); ownHand.push(found); } }
   else if (e === 'perfectEvolutionResource') { const d = player === 1 ? p1DonDeck : p2DonDeck, r = player === 1 ? p1DonReserve : p2DonReserve; for(let i=0;i<2 && d.length;i++) r.push(d.pop()); draw(); draw(); const top=ownDeck.slice(-5).reverse(); if(top.length) log('🔭 Núcleo de la Evolución Perfecta: '+top.map(x=>x.name).join(' · ')+'.'); }
+
+  else if (e === 'cantoInfernal') resolveCantoRoll(player);
+  else if (e === 'cantoDrawEven' || e === 'cantoDrawOdd') { const r = resolveCantoRoll(player); if ((e === 'cantoDrawEven' && r % 2 === 0) || (e === 'cantoDrawOdd' && r % 2 === 1)) draw(); }
+  else if (e === 'cantoSixDon') { const r = resolveCantoRoll(player); if (r === 6) recoverUsedDon(player, 1); }
+  else if (e === 'doubleCanto') { resolveCantoRoll(player); resolveCantoRoll(player); }
+  else if (e === 'tripleCantoDraw2') { resolveCantoRoll(player); resolveCantoRoll(player); resolveCantoRoll(player); draw(); draw(); }
+  else if (e === 'doubleCantoDraw') { resolveCantoRoll(player); resolveCantoRoll(player); draw(); }
+  else if (e === 'cantoDebuffAll') { resolveCantoRoll(player); enemyField.forEach(u => u.tempBoost = (u.tempBoost || 0) - 700); }
+  else if (e === 'ultimateConcert') { draw(); draw(); draw(); recoverUsedDon(player,2); resolveCantoRoll(player); }
+  else if (e === 'stealRandom') randomHandSteal(player === 1 ? 2 : 1, player);
+  else if (e === 'cantoPlusOne') { if (player === 1) cantoModifierP1 = 1; else cantoModifierP2 = 1; }
+  else if (e === 'drawConditional') { draw(); if (ownHand.length < (player === 1 ? aiHand.length : hand.length)) draw(); }
+  else if (e === 'debuff700Combo') { const i = chooseEnemyIndex(Infinity, player); if (i >= 0) enemyField[i].tempBoost = (enemyField[i].tempBoost || 0) - 700; addCombo(player,1); }
+  else if (e === 'donRecoverDraw') { recoverUsedDon(player,1); draw(); }
+  else if (e === 'cantoStealOnly') resolveCantoRoll(player, {forceSteal:true});
+  else if (e === 'draw2Shield') { draw(); draw(); if (player === 1 && p1shield < 3) p1shield++; if (player === 2 && p2shield < 3) p2shield++; }
+  else if (e === 'donRecover2Draw') { recoverUsedDon(player,2); draw(); }
+  else if (e === 'team300Combo') { ownField.forEach(u => u.tempBoost = (u.tempBoost || 0) + 300); addCombo(player,1); }
+  else if (e === 'readyBoost1000') { const u = ownField[0]; if (u) { u.summoningSickness=false; u.tempBoost=(u.tempBoost||0)+1000; } }
+  else if (e === 'debuffAll500') enemyField.forEach(u => u.tempBoost = (u.tempBoost || 0) - 500);
+  else if (e === 'searchTop5') { if (ownDeck.length) { const take=Math.min(5,ownDeck.length), top=ownDeck.splice(ownDeck.length-take,take); const chosen=top.pop(); ownHand.push(chosen); ownDeck.push(...top); log('🔎 ' + c.name + ': añadiste 1 carta de las primeras ' + take + '.'); } }
+  else if (e === 'draw3Canto') { draw(); draw(); draw(); resolveCantoRoll(player); }
+  else if (e === 'ko2200' || e === 'ko1800') { const limit=e==='ko2200'?2200:1800; const i=chooseEnemyIndex(limit,player); if(i>=0){const defeated=enemyField.splice(i,1)[0];enemyGrave.push(defeated);notifyDefeat(defeated,enemyPlayer);} }
+  else if (e === 'bounce1500') { const i=chooseEnemyIndex(1500,player); if(i>=0) ownHand.push(enemyField.splice(i,1)[0]); }
+  else if (e === 'lowLife500') { if ((player===1?p1hp:p2hp)<=2) { const u=ownField[ownField.length-1]; if(u)u.tempBoost=(u.tempBoost||0)+500; } }
+  else if (e === 'graveThisTurn500') { if (p1Grave.length+p2Grave.length>0) { const u=ownField[ownField.length-1]; if(u)u.tempBoost=(u.tempBoost||0)+500; } }
+  else if (e === 'draw1Ready') { draw(); const u=ownField[ownField.length-1]; if(u)u.summoningSickness=false; }
+  else if (e === 'team200') ownField.filter((_,i)=>i<ownField.length-1).forEach(u=>u.tempBoost=(u.tempBoost||0)+200);
+  else if (e === 'handGap700') { if (ownHand.length < (player===1?aiHand.length:hand.length)) { const u=ownField[ownField.length-1]; if(u)u.tempBoost=(u.tempBoost||0)+700; } }
+  else if (e === 'draw2Don') { draw(); draw(); recoverUsedDon(player,1); }
+  else if (e === 'shieldDraw') { if(player===1&&p1shield<3)p1shield++; if(player===2&&p2shield<3)p2shield++; draw(); }
+  else if (e === 'debuffAll700') enemyField.forEach(u=>u.tempBoost=(u.tempBoost||0)-700);
+  else if (e === 'drawlessReadyBoost') { const u=ownField[ownField.length-1]; if(u){u.summoningSickness=false;u.tempBoost=(u.tempBoost||0)+500;} }
   else if (e === 'reuseAbility') {
     if (lastResolvedAbility && !resolvingRepeatedAbility) {
       resolvingRepeatedAbility = true;
@@ -1614,10 +1797,19 @@ function activateUnitAbility(index, player = 1, fromAI = false) {
     enemyHand.push(enemyField.pop());
     unit.used = true;
     log('🧬 ' + unit.name + ': un personaje enemigo volvió a la mano.');
+  } else if (unit.active === 'cantoStealOnly') {
+    resolveCantoRoll(player, {forceSteal:true});
+  } else if (unit.active === 'doubleCanto') {
+    if (unit.doubleCantoUsed) { log('🎤 ' + unit.name + ': ya usó su doble Canto Infernal en esta partida.'); return false; }
+    resolveCantoRoll(player); resolveCantoRoll(player); unit.doubleCantoUsed = true;
   } else if (unit.active === 'evolutionNextBoost') {
     if (player === 1) evolutionNextBoostP1 = true; else evolutionNextBoostP2 = true;
     unit.used = true;
     log('🧬 ' + unit.name + ': tu próxima Evolución obtiene +500 adicional.');
+  } else if (unit.active === 'scry1') {
+    const deckRef = player === 1 ? p1Deck : p2Deck;
+    const preview = deckRef.slice(-1);
+    if (preview.length) log('🔭 ' + unit.name + ': ' + preview[0].name + '.');
   } else if (unit.active === 'repeatCombo') {
     const comboUnit = field.find(card => card !== unit && card.combo && card.combo <= 3 && (card.comboBoost || card.comboEffect));
     if (!comboUnit) {
@@ -1950,6 +2142,13 @@ async function aiTurn() {
   render();
   await delay(1000);
 
+  if (!cantoUsedP2 && aiLeader?.id?.startsWith('T')) {
+    setAIRealtime('Activando Canto Infernal...');
+    useCantoInfernal(2, {fromAI:true});
+    render();
+    await delay(700);
+  }
+
   // Set 06: la IA evalúa Evolución Alarmante como una jugada de alto impacto.
   if (!evolutionUsedThisTurnP2 && p2Field.some(isEvolutionEligible) && aiHand.length) {
     const evoTarget = GLTCG.ai.chooseEvolutionCard(aiHand, aiPolicy);
@@ -2066,11 +2265,13 @@ async function aiTurn() {
     collisionLeaderUsedP2 = false;
     evolutionUsedThisTurnP2 = false;
     evolutionNextBoostP2 = false;
+    cantoUsedP2 = false; cantoModifierP2 = 0; cantoTurnHistoryP2 = [];
     comboP1 = 0;
     comboBonusP1 = 0;
     collisionLeaderUsedP1 = false;
     evolutionUsedThisTurnP1 = false;
     evolutionNextBoostP1 = false;
+    cantoUsedP1 = false; cantoModifierP1 = 0; cantoTurnHistoryP1 = [];
     lastResolvedAbility = null;
     active = 1;
     turn++;
@@ -2164,6 +2365,7 @@ function reset() {
   shadowsDisabledP1 = false; shadowsDisabledP2 = false;
   evolutionNextBoostP1 = false; evolutionNextBoostP2 = false;
   evolutionImmediateAttackUsedP1 = false; evolutionImmediateAttackUsedP2 = false;
+  cantoUsedP1 = false; cantoUsedP2 = false; cantoModifierP1 = 0; cantoModifierP2 = 0; cantoTurnHistoryP1 = []; cantoTurnHistoryP2 = [];
   lastResolvedAbility = null;
   resolvingRepeatedAbility = false;
   
@@ -2254,6 +2456,15 @@ function renderArena() {
   
   const p1 = document.getElementById("arenaP1Field"), p2 = document.getElementById("arenaP2Field");
   
+  // SET 07 — botón de Canto Infernal del Líder
+  const leaderBox = document.getElementById('arenaP1Leader');
+  if (leaderBox) {
+    let cb = leaderBox.querySelector('.btn-leader-canto');
+    if (selectedLeader.id && selectedLeader.id.startsWith('T')) {
+      if (!cb) { cb = document.createElement('button'); cb.className='btn-leader-canto'; cb.textContent='🎤 Canto Infernal'; cb.onclick=(ev)=>{ev.stopPropagation();useCantoInfernal(1);render();}; leaderBox.appendChild(cb); }
+      cb.disabled = !canPlay() || cantoUsedP1;
+    } else if (cb) cb.remove();
+  }
   // RENDER P1 FIELD UNITS
   if (p1) {
     p1.innerHTML = "";
@@ -2382,6 +2593,15 @@ function renderArena() {
     });
   }
   
+  const enemyLeaderBox = document.getElementById('arenaP2Leader');
+  if (enemyLeaderBox) {
+    let cb2 = enemyLeaderBox.querySelector('.btn-leader-canto');
+    if (localMode === 'pvp' && selectedLeaderP2?.id?.startsWith('T')) {
+      if (!cb2) { cb2=document.createElement('button'); cb2.className='btn-leader-canto'; cb2.textContent='🎤 Canto Infernal'; cb2.onclick=(ev)=>{ev.stopPropagation();useCantoInfernal(2);render();}; enemyLeaderBox.appendChild(cb2); }
+      cb2.disabled = active !== 2 || cantoUsedP2 || gameOver;
+    } else if (cb2) cb2.remove();
+  }
+
   // RENDER PLAYER HAND
   const h = document.getElementById("arenaHand");
   if (h) {
