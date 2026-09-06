@@ -81,6 +81,10 @@ let rabbitHoleUsed = false;
 let comboP1 = 0, comboP2 = 0;
 let comboBonusP1 = 0, comboBonusP2 = 0;
 let collisionLeaderUsedP1 = false, collisionLeaderUsedP2 = false;
+let evolutionUsedThisTurnP1 = false, evolutionUsedThisTurnP2 = false;
+let shadowsDisabledP1 = false, shadowsDisabledP2 = false;
+let evolutionNextBoostP1 = false, evolutionNextBoostP2 = false;
+let evolutionImmediateAttackUsedP1 = false, evolutionImmediateAttackUsedP2 = false;
 let lastResolvedAbility = null;
 let resolvingRepeatedAbility = false;
 let battleEventHistory = [];
@@ -385,13 +389,13 @@ function renderLeaderChoices(player = 1) {
   const filter = typeof currentLeaderFilter !== 'undefined' ? currentLeaderFilter : 'ALL';
   const list = LEADERS.filter(l => {
     if (filter === 'ALL') return true;
-    const s = l.id.startsWith('A') ? 'AWAKENING' : l.id.startsWith('S') ? 'SHADOWS' : l.id.startsWith('C') ? 'COLLISION' : l.id.startsWith('R') ? 'RABBIT HOLE' : 'ORIGINS';
+    const s = l.id.startsWith('A') ? 'AWAKENING' : l.id.startsWith('S') ? 'SHADOWS' : l.id.startsWith('C') ? 'COLLISION' : l.id.startsWith('R') ? 'RABBIT HOLE' : l.id.startsWith('E') ? 'EVOLUTION OF HOLE' : 'ORIGINS';
     return s === filter;
   });
   list.forEach(l => {
     const e = document.createElement('div');
     e.className = 'leader-choice';
-    const leaderSet = l.id.startsWith('A') ? 'AWAKENING' : l.id.startsWith('S') ? 'SHADOWS' : l.id.startsWith('C') ? 'COLLISION' : l.id.startsWith('R') ? 'RABBIT HOLE' : 'ORIGINS';
+    const leaderSet = l.id.startsWith('A') ? 'AWAKENING' : l.id.startsWith('S') ? 'SHADOWS' : l.id.startsWith('C') ? 'COLLISION' : l.id.startsWith('R') ? 'RABBIT HOLE' : l.id.startsWith('E') ? 'EVOLUTION OF HOLE' : 'ORIGINS';
     e.innerHTML = '<div class="leader-choice-art">' + l.art + '</div>' +
                   '<h2>' + l.name + '</h2>' +
                   '<div class="badge">' + leaderSet + ' · ' + l.color + '</div>' +
@@ -553,7 +557,7 @@ function closeSets() {
 }
 
 function setOfCard(c) {
-  if (c && c.id) return c.id.startsWith('A') ? 'AWAKENING' : c.id.startsWith('S') ? 'SHADOWS' : c.id.startsWith('C') ? 'COLLISION' : c.id.startsWith('R') ? 'RABBIT_HOLE' : 'ORIGINS';
+  if (c && c.id) return c.id.startsWith('A') ? 'AWAKENING' : c.id.startsWith('S') ? 'SHADOWS' : c.id.startsWith('C') ? 'COLLISION' : c.id.startsWith('R') ? 'RABBIT_HOLE' : c.id.startsWith('E') ? 'EVOLUTION_OF_HOLE' : 'ORIGINS';
   return 'ORIGINS';
 }
 
@@ -965,7 +969,7 @@ function totalPower(c) {
 
 function showShadowStatus() {
   const e = document.getElementById('shadowStatus');
-  if (e) e.textContent = 'P1: ' + (shadowUsedP1 ? '✅ usada' : '🟢 disponible') + ' · P2: ' + (shadowUsedP2 ? '✅ usada' : '🟢 disponible') + ' · Se activa cuando una carta sea derrotada.';
+  if (e) e.textContent = 'P1: ' + (shadowsDisabledP1 ? '🚫 bloqueada por Evolución' : (shadowUsedP1 ? '✅ usada' : '🟢 disponible')) + ' · P2: ' + (shadowsDisabledP2 ? '🚫 bloqueada por Evolución' : (shadowUsedP2 ? '✅ usada' : '🟢 disponible')) + ' · Evolución Alarmante bloquea Sombras para el resto de la partida.';
 }
 
 function comboValue(player) {
@@ -1070,6 +1074,7 @@ function setupDropZone(el, kind, index) {
     if (!canPlay() || !p1DonReserve.length) return;
     let i = Number(e.dataTransfer.getData("text/plain"));
     if (!p1DonReserve[i]) return;
+    if (p1Field[index]?.noDonThisTurn) return;
     p1DonReserve.splice(i, 1);
     p1don = p1DonReserve.length;
     if (kind === "leader") {
@@ -1409,6 +1414,10 @@ function playCardForPlayer(player, index, fromAI = false) {
   const card = ownHand[index];
   const pay = player === 1 ? payP1 : payP2;
   if (!card) return false;
+  if (card.onlyEvolution === true) {
+    log('🧬 ' + card.name + ' solo puede ser invocada mediante Evolución Alarmante.');
+    return false;
+  }
   if (!pay(card.cost)) {
     log('❌ ' + (player === 1 ? 'No tienes' : 'PLAYER 2 no tiene') + ' suficientes DON en reserva.');
     return false;
@@ -1450,7 +1459,7 @@ function playCardP2(i) {
   playCardForPlayer(2, i);
 }
 
-function applyCardEffect(c, player = 1) {
+function applyCardEffect(c, player = 1, context = {}) {
   const e = c.effect || c.onPlay;
   if (e !== 'reuseAbility' && !resolvingRepeatedAbility) lastResolvedAbility = { card: c, player: player };
   const ownHand = player === 1 ? hand : aiHand;
@@ -1542,6 +1551,43 @@ function applyCardEffect(c, player = 1) {
     for (let i = 0; i < amount && donDeck.length; i++) donReserve.push(donDeck.pop());
     if (e === 'legendCore') { draw(); draw(); draw(); draw(); }
   }
+  else if (e === 'lowLifeBoost') { if ((player === 1 ? p1hp : p2hp) <= 2) { const u = ownField[ownField.length - 1]; if (u) u.tempBoost = (u.tempBoost || 0) + 300; } if ((player === 1 ? p1hp : p2hp) <= 1) draw(); }
+  else if (e === 'scry2') { const d = ownDeck.slice(-2).reverse(); if (d.length) log('🔭 ' + c.name + ': ' + d.map(x => x.name).join(' · ') + '.'); }
+  else if (e === 'evolutionBoost500' || e === 'evolutionBoost700' || e === 'evolutionBoost300' || e === 'evolutionTitan' || e === 'evolutionLegend') { const u = ownField[ownField.length - 1]; if (u && context.evolved) u.tempBoost = (u.tempBoost || 0) + ({evolutionBoost500:500,evolutionBoost700:700,evolutionBoost300:300,evolutionTitan:800,evolutionLegend:1000}[e]); }
+  else if (e === 'searchEvolution') { const found = ownDeck.slice(-5).reverse().find(x => x.id && (x.id.startsWith('R') || x.id.startsWith('E'))); if (found) { const ix = ownDeck.indexOf(found); ownDeck.splice(ix,1); ownHand.push(found); log('🧬 ' + c.name + ': añadiste ' + found.name + ' a tu mano.'); } }
+  else if (e === 'blockerLowLife') { const u = ownField[ownField.length - 1]; if (u && (player === 1 ? p1hp : p2hp) <= 0) u.tempBoost = (u.tempBoost || 0) + 500; }
+  else if (e === 'rabbitSynergy') { const u = ownField[ownField.length - 1]; if (u && ownField.some(x => x.id && x.id.startsWith('R'))) u.tempBoost = (u.tempBoost || 0) + 300; }
+  else if (e === 'recoverEvolutionCard') { const found = [...ownGrave].reverse().find(x => x.id && (x.id.startsWith('R') || x.id.startsWith('E'))); if (found) { ownGrave.splice(ownGrave.indexOf(found),1); ownHand.push(found); } }
+  else if (e === 'evolutionSupport') { ownField.forEach(u => { if (u.invokedByEvolution) u.tempBoost = (u.tempBoost || 0) + 500; }); }
+  else if (e === 'evolutionRush' || e === 'evolutionAttackReady' || e === 'evolutionLeaderAttack') { const u = ownField[ownField.length - 1]; if (u && context.evolved) { u.summoningSickness = false; if (e === 'evolutionLeaderAttack') u.canAttackLeader = true; } }
+  else if (e === 'evolutionKing') { if (context.evolved) { const d = player === 1 ? p1DonDeck : p2DonDeck, r = player === 1 ? p1DonReserve : p2DonReserve; if (d.length) r.push(d.pop()); draw(); draw(); } }
+  else if (e === 'evolutionEntity') { /* activo por botón, ver activateUnitAbility */ }
+  else if (e === 'evolutionNextBoost') { if (player === 1) evolutionNextBoostP1 = true; else evolutionNextBoostP2 = true; }
+  else if (e === 'bounceTwo') { let count = 0; for (let i = enemyField.length - 1; i >= 0 && count < 2; i--) if (enemyField[i].cost <= 4) { ownHand.push(enemyField.splice(i,1)[0]); count++; } }
+  else if (e === 'perfectEvolution') { const u = ownField[ownField.length - 1]; if (u && context.evolved) u.tempBoost = (u.tempBoost || 0) + 1000; if (context.evolved) { draw(); draw(); const d = player === 1 ? p1DonDeck : p2DonDeck, r = player === 1 ? p1DonReserve : p2DonReserve; if (d.length) r.push(d.pop()); } }
+  else if (e === 'finalEvolution') { const u = ownField[ownField.length - 1]; if (u && context.evolved) u.summoningSickness = false; }
+  else if (e === 'scry1') { const d = ownDeck.slice(-1); if (d.length) log('🔭 ' + c.name + ': ' + d[0].name + '.'); }
+  else if (e === 'scry3') { const d = ownDeck.slice(-3).reverse(); if (d.length) log('🔭 ' + c.name + ': ' + d.map(x => x.name).join(' · ') + '.'); }
+  else if (e === 'evolutionBlockerKO' || e === 'evolutionHunter') { if (context.evolved && e === 'evolutionHunter') draw(); }
+  else if (e === 'activateEvolution' || e === 'forcedEvolution' || e === 'uncontrolledEvolution' || e === 'supremeEvolution' || e === 'impossibleForm' || e === 'ultimateForm' || e === 'beyondRabbitHole') {
+    const options = { extraBoost: e === 'forcedEvolution' ? 500 : e === 'supremeEvolution' ? 1500 : e === 'ultimateForm' ? 2000 : 0, immediateAttack: e === 'uncontrolledEvolution' || e === 'ultimateForm', noDonThisTurn: e === 'uncontrolledEvolution', leaderAttack: e === 'ultimateForm', fromAI: player === 2 };
+    if (e === 'impossibleForm') options.minCost = 7;
+    if (e === 'beyondRabbitHole') options.maxCost = 10;
+    evolutionFromEvent(player, options);
+    if (e === 'activateEvolution') addCombo(player,1); else if (e === 'uncontrolledEvolution') addCombo(player,2); else if (e === 'supremeEvolution') addCombo(player,2); else if (e === 'impossibleForm') addCombo(player,2); else if (e === 'ultimateForm') addCombo(player,2); else if (e === 'beyondRabbitHole') addCombo(player,3);
+  }
+  else if (e === 'secondForm') { const u = ownField[ownField.length - 1]; if (u) { u.tempBoost = (u.tempBoost || 0) + 1000; if (u.invokedByEvolution) u.summoningSickness = false; } }
+  else if (e === 'unexpectedMutation') { const ix = ownField.findIndex(isEvolutionEligible); if (ix >= 0) { ownHand.push(ownField.splice(ix,1)[0]); evolutionFromEvent(player); } }
+  else if (e === 'evolutionJump') { const u = ownField.find(x => x.invokedByEvolution) || ownField[ownField.length - 1]; if (u) u.tempBoost = (u.tempBoost || 0) + 1000; }
+  else if (e === 'abyssForm') { const i = chooseEnemyIndex(Infinity, player); if (i >= 0) { enemyField[i].tempBoost = (enemyField[i].tempBoost || 0) - 1000; enemyField[i].abilitiesDisabled = true; } }
+  else if (e === 'recoverSet05') { const found = [...ownGrave].reverse().find(x => x.id && x.id.startsWith('R')); if (found) { ownGrave.splice(ownGrave.indexOf(found),1); ownHand.push(found); } addCombo(player,1); }
+  else if (e === 'evolutionKO') { const limit = (player === 1 ? evolutionUsedThisTurnP1 : evolutionUsedThisTurnP2) ? 2300 : 1800; const i = chooseEnemyIndex(limit, player); if (i >= 0) { const defeated = enemyField.splice(i,1)[0]; enemyGrave.push(defeated); notifyDefeat(defeated, enemyPlayer); } addCombo(player,1); }
+  else if (e === 'rewriteDestiny') { for (let i=0;i<2 && ownField.length;i++) ownHand.push(ownField.pop()); draw(); draw(); draw(); addCombo(player,1); }
+  else if (e === 'voidEvolution') { enemyField.forEach(u => u.tempBoost = (u.tempBoost || 0) - 1000); addCombo(player,2); }
+  else if (e === 'draw2Discard1') { draw(); draw(); if (ownHand.length) ownHand.shift(); }
+  else if (e === 'recoverDon1' || e === 'recoverDon2') { const d = player === 1 ? p1DonDeck : p2DonDeck, r = player === 1 ? p1DonReserve : p2DonReserve; const n = e === 'recoverDon2' ? 2 : 1; for(let i=0;i<n && d.length;i++) r.push(d.pop()); }
+  else if (e === 'draw3RecoverEvolution') { draw(); draw(); draw(); const found = [...ownGrave].reverse().find(x => x.id && (x.id.startsWith('R') || x.id.startsWith('E'))); if (found) { ownGrave.splice(ownGrave.indexOf(found),1); ownHand.push(found); } }
+  else if (e === 'perfectEvolutionResource') { const d = player === 1 ? p1DonDeck : p2DonDeck, r = player === 1 ? p1DonReserve : p2DonReserve; for(let i=0;i<2 && d.length;i++) r.push(d.pop()); draw(); draw(); const top=ownDeck.slice(-5).reverse(); if(top.length) log('🔭 Núcleo de la Evolución Perfecta: '+top.map(x=>x.name).join(' · ')+'.'); }
   else if (e === 'reuseAbility') {
     if (lastResolvedAbility && !resolvingRepeatedAbility) {
       resolvingRepeatedAbility = true;
@@ -1560,7 +1606,19 @@ function activateUnitAbility(index, player = 1, fromAI = false) {
   if (player === 1 && !canPlay()) return false;
   if (player === 2 && !fromAI && (localMode !== 'pvp' || active !== 2)) return false;
 
-  if (unit.active === 'repeatCombo') {
+  if (unit.active === 'evolutionEntity') {
+    if (!unit.invokedByEvolution) { log('🧬 Esta Entidad no fue invocada mediante Evolución.'); return false; }
+    const enemyField = player === 1 ? p2Field : p1Field;
+    const enemyHand = player === 1 ? hand : aiHand;
+    if (!enemyField.length) { log('🧬 No hay personaje enemigo para devolver.'); return false; }
+    enemyHand.push(enemyField.pop());
+    unit.used = true;
+    log('🧬 ' + unit.name + ': un personaje enemigo volvió a la mano.');
+  } else if (unit.active === 'evolutionNextBoost') {
+    if (player === 1) evolutionNextBoostP1 = true; else evolutionNextBoostP2 = true;
+    unit.used = true;
+    log('🧬 ' + unit.name + ': tu próxima Evolución obtiene +500 adicional.');
+  } else if (unit.active === 'repeatCombo') {
     const comboUnit = field.find(card => card !== unit && card.combo && card.combo <= 3 && (card.comboBoost || card.comboEffect));
     if (!comboUnit) {
       log('⏳ No hay un efecto Combo 3 o inferior disponible para repetir.');
@@ -1659,7 +1717,8 @@ function notifyDefeat(card, ownerPlayer) {
 
 function rollShadows(player, defeatedName) {
   const used = player === 1 ? shadowUsedP1 : shadowUsedP2;
-  if (used || gameOver) return;
+  const disabled = player === 1 ? shadowsDisabledP1 : shadowsDisabledP2;
+  if (used || disabled || gameOver) return;
   const aiShouldUse = player === 2 && localMode === 'ai' && p2Grave.length > 0 && (p2Grave.length >= 3 || aiHand.length <= 2 || p2Field.length === 0);
   const wants = aiShouldUse || (player !== 2 || localMode !== 'ai') && confirm((player === 1 ? '🌑 PLAYER 1' : '🌑 PLAYER 2') + ' puede activar SOMBRAS DEL INFIERNO porque ' + defeatedName + ' fue derrotado. ¿Lanzar el dado?');
   if (!wants) return;
@@ -1686,6 +1745,160 @@ function tryRabbitHole(player) {
   rabbitHoleUsed = true;
   log((player === 1 ? '🐇 RABBIT HOLE: ' : '🤖 🐇 RABBIT HOLE: ') + card.name + ' ignoró el ataque final.');
   return true;
+}
+
+
+function isEvolutionEligible(card) {
+  return !!card && typeof card.id === 'string' && (card.id.startsWith('R') || card.id.startsWith('E'));
+}
+
+function evolutionState(player) {
+  return {
+    hand: player === 1 ? hand : aiHand,
+    field: player === 1 ? p1Field : p2Field,
+    grave: player === 1 ? p1Grave : p2Grave,
+    donReserve: player === 1 ? p1DonReserve : p2DonReserve
+  };
+}
+
+function showEvolutionStatus() {
+  const el = document.getElementById('evolutionStatus');
+  if (!el) return;
+  el.textContent = 'P1: ' + (evolutionUsedThisTurnP1 ? '✅ usada este turno' : '🧬 disponible') +
+    ' · P2: ' + (evolutionUsedThisTurnP2 ? '✅ usada este turno' : '🧬 disponible') +
+    ' · Sombras: ' + (shadowsDisabledP1 ? 'P1 🚫' : 'P1 🟢') + ' / ' + (shadowsDisabledP2 ? 'P2 🚫' : 'P2 🟢');
+}
+
+function triggerEvolutionLeaderEffects(player, invoked) {
+  const leader = player === 1 ? selectedLeader : (localMode === 'pvp' && selectedLeaderP2 ? selectedLeaderP2 : aiLeader);
+  if (!leader || !invoked) return;
+  const field = player === 1 ? p1Field : p2Field;
+  if (leader.id === 'E01') {
+    const unit = field.find(c => c === invoked);
+    if (unit) unit.tempBoost = (unit.tempBoost || 0) + 500;
+  } else if (leader.id === 'E02') {
+    const deck = player === 1 ? p1Deck : p2Deck;
+    log('🔭 Lyra, Forma Evolucionada: mira las 3 primeras cartas. ' + (deck.slice(-3).reverse().map(c => c.name).join(' · ') || 'Mazo vacío') + '.');
+  } else if (leader.id === 'E03') {
+    const unit = field.find(c => (c.attached || 0) >= 2);
+    if (unit) unit.tempBoost = (unit.tempBoost || 0) + 500;
+  } else if (leader.id === 'E04') {
+    const d = player === 1 ? p1DonDeck : p2DonDeck;
+    const r = player === 1 ? p1DonReserve : p2DonReserve;
+    if (d.length) r.push(d.pop());
+  } else if (leader.id === 'E05') {
+    if ((player === 1 ? p1hp : p2hp) <= 2) {
+      if (player === 1 && p1shield < 3) p1shield++;
+      if (player === 2 && p2shield < 3) p2shield++;
+    }
+  } else if (leader.id === 'E06') {
+    const usedFlag = player === 1 ? evolutionImmediateAttackUsedP1 : evolutionImmediateAttackUsedP2;
+    if (!usedFlag) {
+      const unit = field.find(c => c === invoked) || field.find(c => !c.summoningSickness);
+      if (unit) {
+        unit.summoningSickness = false;
+        unit.canAttackLeader = true;
+        unit.tempBoost = (unit.tempBoost || 0) + 1000;
+        if (player === 1) evolutionImmediateAttackUsedP1 = true; else evolutionImmediateAttackUsedP2 = true;
+        log('🌌 EON: ' + unit.name + ' puede atacar inmediatamente y recibe +1000 este ataque.');
+      }
+    }
+  }
+  log('🧬 ' + leader.name + ' reaccionó a la Evolución Alarmante.');
+}
+
+function invokeCardFree(player, card, extraBoost = 0, immediateAttack = false) {
+  const state = evolutionState(player);
+  if (!card) return null;
+  if (card.onlyEvolution === true || card.type === 'Personaje') {
+    if (card.type === 'Personaje') {
+      const unit = cloneCard(card);
+      Object.assign(unit, GLTCG.rules.createUnitState(card));
+      unit.invokedByEvolution = true;
+      unit.summoningSickness = !immediateAttack;
+      unit.tempBoost = (unit.tempBoost || 0) + extraBoost;
+      state.field.push(unit);
+      applyCardEffect(card, player, { evolved: true, unit });
+      if (unit.awakening) triggerAwakening(unit, player, false);
+      return unit;
+    }
+  }
+  applyCardEffect(card, player, { evolved: true });
+  state.grave.push(card);
+  return card;
+}
+
+function activateEvolution(player = 1, sourceIndex = null, handIndex = null, options = {}) {
+  if (gameOver) return false;
+  if (player === 1 && !canPlay()) return false;
+  if (player === 2 && !options.fromAI && (localMode !== 'pvp' || active !== 2)) return false;
+  const usedThisTurn = player === 1 ? evolutionUsedThisTurnP1 : evolutionUsedThisTurnP2;
+  if (usedThisTurn) {
+    log('❌ Evolución Alarmante ya fue usada este turno.');
+    return false;
+  }
+  const state = evolutionState(player);
+  let source = Number.isInteger(sourceIndex) ? state.field[sourceIndex] : null;
+  if (!source || !isEvolutionEligible(source)) {
+    log('🧬 Debes elegir un personaje de Set 05 o Set 06 como sacrificio de Evolución.');
+    return false;
+  }
+  let targetIndex = Number.isInteger(handIndex) ? handIndex : -1;
+  if (targetIndex < 0 || !state.hand[targetIndex]) {
+    const choices = state.hand.map((c, i) => i + ': ' + c.name + ' [' + c.type + ' · coste ' + c.cost + ']').join('\n');
+    const answer = prompt('🧬 ELEGIR CARTA PARA EVOLUCIÓN\n\n' + choices + '\n\nEscribe el número de la carta que quieres invocar GRATIS:');
+    if (answer === null) return false;
+    targetIndex = Number(answer);
+  }
+  const target = state.hand[targetIndex];
+  if (!target) return false;
+  const leader = player === 1 ? selectedLeader : (localMode === 'pvp' && selectedLeaderP2 ? selectedLeaderP2 : aiLeader);
+  if (target.onlyEvolution !== true && target.type === 'Personaje' && target.id === 'E36' && !isEvolutionEligible(source)) return false;
+  const attached = source.attached || 0;
+  if (attached) {
+    for (let i = 0; i < attached && state.donReserve.length < 10; i++) state.donReserve.push({ id: 'DON_RETURN_' + Date.now() + '_' + i, name: 'DON!!', cost: 0, power: 0, type: 'Recurso', art: '🪙' });
+  }
+  state.field.splice(sourceIndex, 1);
+  state.grave.push(source);
+  state.hand.splice(targetIndex, 1);
+  if (player === 1) evolutionUsedThisTurnP1 = true; else evolutionUsedThisTurnP2 = true;
+  if (player === 1) shadowsDisabledP1 = true; else shadowsDisabledP2 = true;
+  let extraBoost = options.extraBoost || 0;
+  if (player === 1 && evolutionNextBoostP1) { extraBoost += 500; evolutionNextBoostP1 = false; }
+  if (player === 2 && evolutionNextBoostP2) { extraBoost += 500; evolutionNextBoostP2 = false; }
+  const immediate = !!options.immediateAttack;
+  const invoked = invokeCardFree(player, target, extraBoost, immediate);
+  if (invoked && invoked.type === 'Personaje') {
+    invoked.invokedByEvolution = true;
+    if (options.noDonThisTurn) invoked.noDonThisTurn = true;
+    if (options.leaderAttack) invoked.canAttackLeader = true;
+    if (options.immediateAttack) invoked.summoningSickness = false;
+  }
+  triggerEvolutionLeaderEffects(player, invoked && invoked.type === 'Personaje' ? invoked : null);
+  log('🧬 EVOLUCIÓN ALARMANTE: ' + source.name + ' fue al cementerio y ' + target.name + ' fue invocado GRATIS. 🌑 Sombras del Infierno queda bloqueada para ' + (player === 1 ? 'P1' : 'P2') + '.');
+  showEvolutionStatus();
+  render();
+  return true;
+}
+
+function evolutionFromEvent(player, options = {}) {
+  const state = evolutionState(player);
+  const sourceIndex = state.field.findIndex(isEvolutionEligible);
+  if (sourceIndex < 0) {
+    log('🧬 No hay un personaje de Set 05/06 disponible para evolucionar.');
+    return false;
+  }
+  let candidates = state.hand.filter(c => c && (c.type === 'Personaje' || options.allowAny));
+  if (options.minCost != null) candidates = candidates.filter(c => c.cost >= options.minCost);
+  if (options.maxCost != null) candidates = candidates.filter(c => c.cost <= options.maxCost);
+  if (!candidates.length) {
+    log('🧬 No hay una carta válida en tu mano para esa evolución.');
+    return false;
+  }
+  let target = options.targetId ? candidates.find(c => c.id === options.targetId) : null;
+  if (!target) target = candidates.slice().sort((a,b) => (b.power || 0) - (a.power || 0) || b.cost - a.cost)[0];
+  const handIndex = state.hand.indexOf(target);
+  return activateEvolution(player, sourceIndex, handIndex, options);
 }
 
 function checkWin() {
@@ -1736,6 +1949,22 @@ async function aiTurn() {
   setAIRealtime("Evaluando jugadas posibles...");
   render();
   await delay(1000);
+
+  // Set 06: la IA evalúa Evolución Alarmante como una jugada de alto impacto.
+  if (!evolutionUsedThisTurnP2 && p2Field.some(isEvolutionEligible) && aiHand.length) {
+    const evoTarget = GLTCG.ai.chooseEvolutionCard(aiHand, aiPolicy);
+    const sourceIndex = p2Field.findIndex(isEvolutionEligible);
+    const targetIndex = evoTarget ? aiHand.indexOf(evoTarget) : -1;
+    const shouldEvolve = evoTarget && targetIndex >= 0 && (evoTarget.cost >= 5 || evoTarget.id === 'E35' || evoTarget.id === 'E36' || aiPolicy.label === 'Difícil');
+    if (shouldEvolve) {
+      setAIRealtime('Activando Evolución Alarmante...');
+      render();
+      await delay(700);
+      activateEvolution(2, sourceIndex, targetIndex, { fromAI: true });
+      render();
+      await delay(700);
+    }
+  }
   
   let choices = aiHand.filter(c => c.cost <= p2DonReserve.length);
   let plays = 0;
@@ -1835,9 +2064,13 @@ async function aiTurn() {
     comboP2 = 0;
     comboBonusP2 = 0;
     collisionLeaderUsedP2 = false;
+    evolutionUsedThisTurnP2 = false;
+    evolutionNextBoostP2 = false;
     comboP1 = 0;
     comboBonusP1 = 0;
     collisionLeaderUsedP1 = false;
+    evolutionUsedThisTurnP1 = false;
+    evolutionNextBoostP1 = false;
     lastResolvedAbility = null;
     active = 1;
     turn++;
@@ -1866,6 +2099,8 @@ function endTurn() {
       comboP1 = 0;
       comboBonusP1 = 0;
       collisionLeaderUsedP1 = false;
+      evolutionUsedThisTurnP1 = false;
+      evolutionNextBoostP1 = false;
       lastResolvedAbility = null;
       p2Field.forEach(GLTCG.rules.resetUnitForTurn);
       log("🔄 Turno de PLAYER 2.");
@@ -1878,6 +2113,8 @@ function endTurn() {
       comboP2 = 0;
       comboBonusP2 = 0;
       collisionLeaderUsedP2 = false;
+      evolutionUsedThisTurnP2 = false;
+      evolutionNextBoostP2 = false;
       lastResolvedAbility = null;
       p1Field.forEach(GLTCG.rules.resetUnitForTurn);
       log("🔄 Turno de PLAYER 1.");
@@ -1923,6 +2160,10 @@ function reset() {
   awakenedThisTurnP2 = false;
   comboP1 = 0; comboP2 = 0; comboBonusP1 = 0; comboBonusP2 = 0;
   collisionLeaderUsedP1 = false; collisionLeaderUsedP2 = false;
+  evolutionUsedThisTurnP1 = false; evolutionUsedThisTurnP2 = false;
+  shadowsDisabledP1 = false; shadowsDisabledP2 = false;
+  evolutionNextBoostP1 = false; evolutionNextBoostP2 = false;
+  evolutionImmediateAttackUsedP1 = false; evolutionImmediateAttackUsedP2 = false;
   lastResolvedAbility = null;
   resolvingRepeatedAbility = false;
   
@@ -2054,6 +2295,13 @@ function renderArena() {
         };
         e.appendChild(b);
       }
+      if (isEvolutionEligible(c) && !evolutionUsedThisTurnP1 && ((localMode === "pvp" && active === 1) || localMode === "ai")) {
+        const evoButton = document.createElement("button");
+        evoButton.className = "btn-unit-evolution";
+        evoButton.textContent = "🧬 Evolucionar";
+        evoButton.onclick = ev => { ev.stopPropagation(); activateEvolution(1, i); };
+        e.appendChild(evoButton);
+      }
       if (c.active && !c.used && ((localMode === "pvp" && active === 1) || localMode === "ai")) {
         const abilityButton = document.createElement("button");
         abilityButton.className = "btn-unit-ability";
@@ -2111,6 +2359,13 @@ function renderArena() {
           chooseArenaAttackP2(i);
         };
         e.appendChild(b);
+        if (isEvolutionEligible(c) && !evolutionUsedThisTurnP2) {
+          const evoButton = document.createElement("button");
+          evoButton.className = "btn-unit-evolution";
+          evoButton.textContent = "🧬 Evolucionar";
+          evoButton.onclick = ev => { ev.stopPropagation(); activateEvolution(2, i); };
+          e.appendChild(evoButton);
+        }
         if (c.active && !c.used) {
           const abilityButton = document.createElement("button");
           abilityButton.className = "btn-unit-ability";
@@ -2190,6 +2445,7 @@ function render() {
   setText("p2grave", p2Grave.length);
   showComboStatus();
   showShadowStatus();
+  showEvolutionStatus();
   
   setText("pStatus", localMode === "pvp" ? (active === 1 ? "🟢 Turno de PLAYER 1" : "🔴 Turno de PLAYER 2") : (active === 1 ? "🟢 Puedes jugar" : "🔴 Esperando a la IA"));
   

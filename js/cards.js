@@ -279,4 +279,84 @@ GLTCG.SETS={
  COLLISION:{id:'COLLISION',name:'SET 04 — COLLISION',cards:SET_04_CARDS,leaders:SET_04_LEADERS,theme:'💥 Combo'},
  RABBIT_HOLE:{id:'RABBIT_HOLE',name:'SET 05 — RABBIT HOLE',cards:SET_05_CARDS,leaders:SET_05_LEADERS,theme:'🐇 Sobrevive al borde de la derrota'}
 };
-GLTCG.SET_01=GLTCG.SETS.ORIGINS;GLTCG.SET_02=GLTCG.SETS.AWAKENING;GLTCG.SET_03=GLTCG.SETS.SHADOWS;GLTCG.SET_04=GLTCG.SETS.COLLISION;GLTCG.SET_05=GLTCG.SETS.RABBIT_HOLE;
+
+
+// ==================== SET 06: EVOLUTION OF HOLE ====================
+// Evolución Alarmante: una vez por turno, envía un personaje de Set 05/06 al cementerio para invocar gratis una carta de tu mano. Al usarla, Sombras del Infierno queda bloqueada para el resto de esa partida.
+const SET_06_LEADERS=[
+ {id:'E01',name:'Aster, Heredero de la Madriguera',art:'🧬🔥',color:'Rojo',life:5,ability:'Una vez por turno: cuando una carta sea invocada mediante Evolución Alarmante, gana +500 poder este turno.',evolutionAbility:'evolutionLeaderBoost'},
+ {id:'E02',name:'Lyra, Forma Evolucionada',art:'🧬🔵',color:'Azul',life:5,ability:'Una vez por turno: después de una Evolución Alarmante, mira las 3 primeras cartas de tu mazo y reordénalas.',evolutionAbility:'evolutionScry3'},
+ {id:'E03',name:'Orion, Rey de la Evolución',art:'🧬🟢',color:'Verde',life:5,ability:'Tus personajes con 2+ DON ganan +300 poder. Una vez por turno tras evolucionar, uno de ellos gana +500 adicional este turno.',evolutionAbility:'evolutionPowerBoost'},
+ {id:'E04',name:'Nyra, Reina de la Transformación',art:'🧬🟣',color:'Morado',life:5,ability:'Una vez por turno: cuando una carta de Set 05/06 sea enviada al cementerio por Evolución Alarmante, recupera 1 DON usado.',evolutionAbility:'evolutionDonRecover'},
+ {id:'E05',name:'Seraph, Testigo de la Evolución',art:'🧬✨',color:'Amarillo',life:5,ability:'Una vez por turno tras evolucionar: si tienes 2 ❤️ o menos y menos de 3 escudos, recupera 1 escudo.',evolutionAbility:'evolutionShieldRecover'},
+ {id:'E06',name:'EON, Forma Final',art:'🧬🌌',color:'Multicolor',life:5,ability:'Una vez por partida después de evolucionar: un personaje tuyo puede atacar inmediatamente; si fue invocado por Evolución, gana +1000 durante ese ataque.',evolutionAbility:'evolutionImmediateAttack'}
+];
+const SET_06_CARDS=[
+ {id:'E07',name:'Conejo Evolucionado',cost:1,power:500,type:'Personaje',art:'🐇🧬',ability:'Si tienes 2 ❤️ o menos, gana +300. Al entrar: si tienes 1 ❤️ o menos, roba 1.',onPlay:'lowLifeBoost',rarity:'Común',traits:['Evolution','Rabbit Hole']},
+ {id:'E08',name:'Exploradora Evolutiva',cost:2,power:700,type:'Personaje',art:'🔭🧬',ability:'Al entrar: mira las 2 primeras cartas de tu mazo.',onPlay:'scry2',rarity:'Común',traits:['Evolution']},
+ {id:'E09',name:'Guardián Mutante',cost:2,power:900,type:'Personaje',art:'🛡️🧬',ability:'🛡️ BLOCKER.',blocker:true,rarity:'Común',traits:['Evolution']},
+ {id:'E10',name:'Lobo de la Segunda Forma',cost:2,power:1000,type:'Personaje',art:'🐺🧬',ability:'Si fue invocado mediante Evolución Alarmante, gana +500 poder.',onPlay:'evolutionBoost500',rarity:'Común',traits:['Evolution','Bestia']},
+ {id:'E11',name:'Científica de la Madriguera',cost:3,power:900,type:'Personaje',art:'🧪🐇',ability:'Al entrar: busca en las 5 primeras cartas una carta de Set 05 o Set 06.',onPlay:'searchEvolution',rarity:'Rara',traits:['Evolution','Rabbit Hole']},
+ {id:'E12',name:'Caballero Renacido',cost:3,power:1300,type:'Personaje',art:'⚔️🧬',ability:'Si fue invocado mediante Evolución Alarmante, gana +700 poder.',onPlay:'evolutionBoost700',rarity:'Rara',traits:['Evolution']},
+ {id:'E13',name:'Fénix Evolutivo',cost:3,power:1200,type:'Personaje',art:'🔥🧬',ability:'Si fue evolucionado, al ser derrotado vuelve a tu mano.',onKO:'evolutionReturn',rarity:'Rara',traits:['Evolution']},
+ {id:'E14',name:'Centinela de la Última Forma',cost:4,power:1600,type:'Personaje',art:'🛡️🌌',ability:'🛡️ BLOCKER. Si tienes 0 ❤️, gana +500 poder.',blocker:true,onPlay:'blockerLowLife',rarity:'Rara',traits:['Evolution']},
+ {id:'E15',name:'Bestia Evolucionada',cost:4,power:1900,type:'Personaje',art:'🐲🧬',ability:'Si fue invocada mediante Evolución Alarmante, gana +500 poder.',onPlay:'evolutionBoost500',rarity:'Rara',traits:['Evolution','Bestia']},
+ {id:'E16',name:'Maestro de la Transformación',cost:4,power:1400,type:'Personaje',art:'🧙🧬',ability:'Una vez por turno: mira la carta superior de tu mazo.',active:'scry1',rarity:'Rara',traits:['Evolution']},
+ {id:'E17',name:'Dragón de la Madriguera',cost:5,power:2300,type:'Personaje',art:'🐉🐇',ability:'Si fue evolucionado, puede atacar inmediatamente.',onPlay:'evolutionRush',rarity:'Súper Rara',traits:['Evolution','Rabbit Hole']},
+ {id:'E18',name:'Guardián de la Segunda Forma',cost:5,power:2400,type:'Personaje',art:'🚪🧬',ability:'Cuando una carta sea invocada mediante Evolución, gana +500 este turno.',onPlay:'evolutionSupport',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E19',name:'Dragón Evolucionado',cost:6,power:2800,type:'Personaje',art:'🐉✨',ability:'Si fue evolucionado, puede atacar personajes listos del rival.',onPlay:'evolutionAttackReady',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E20',name:'Reina Evolutiva',cost:6,power:2600,type:'Personaje',art:'👸🧬',ability:'Al entrar: recupera una carta de Set 05/06 de tu cementerio a tu mano.',onPlay:'recoverEvolutionCard',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E21',name:'Titán de la Evolución',cost:7,power:3400,type:'Personaje',art:'🗿🧬',ability:'Si fue evolucionado, gana +800 y no puede perder poder este turno.',onPlay:'evolutionTitan',rarity:'Ultra Rara',traits:['Evolution']},
+ {id:'E22',name:'Oráculo de la Segunda Forma',cost:5,power:1600,type:'Personaje',art:'🔮🧬',ability:'Una vez por turno: mira las 3 primeras cartas de tu mazo.',active:'scry3',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E23',name:'Cazador Evolucionado',cost:4,power:1800,type:'Personaje',art:'🏹🧬',ability:'Cuando derrota un personaje, roba 1 carta si usaste Evolución este turno.',onKO:'evolutionHunter',rarity:'Rara',traits:['Evolution']},
+ {id:'E24',name:'Soberano de la Evolución',cost:8,power:3900,type:'Personaje',art:'👑🧬',ability:'Al entrar: si fue evolucionado, recupera 1 DON usado y roba 2 cartas.',onPlay:'evolutionKing',rarity:'Ultra Rara',traits:['Evolution','Legendaria']},
+ {id:'E25',name:'Leyenda Evolucionada',cost:9,power:4500,type:'Personaje',art:'🌌🧬',ability:'Si fue evolucionada, gana +1000 poder.',onPlay:'evolutionLegend',rarity:'Legendaria',traits:['Evolution','Legendaria']},
+ {id:'E26',name:'Entidad de la Evolución',cost:10,power:5000,type:'Personaje',art:'👁️🧬',ability:'Una vez por partida: si fue evolucionada, devuelve 1 personaje enemigo a la mano.',active:'evolutionEntity',rarity:'Legendaria',traits:['Evolution','Legendaria']},
+ {id:'E27',name:'Conejo del Futuro',cost:2,power:800,type:'Personaje',art:'🐇⏩',ability:'Si controlas una carta de Set 05, gana +300 poder.',onPlay:'rabbitSynergy',rarity:'Común',traits:['Evolution','Rabbit Hole']},
+ {id:'E28',name:'Guerrero de la Madriguera',cost:3,power:1400,type:'Personaje',art:'⚔️🐇',ability:'Si usaste Evolución este turno, gana +300 poder.',onPlay:'evolutionBoost300',rarity:'Común',traits:['Evolution','Rabbit Hole']},
+ {id:'E29',name:'Guardián de la Evolución',cost:4,power:1700,type:'Personaje',art:'🛡️🧬',ability:'🛡️ BLOCKER. Al ser derrotado, si usaste Evolución este turno, roba 1.',blocker:true,onKO:'evolutionBlockerKO',rarity:'Rara',traits:['Evolution']},
+ {id:'E30',name:'Fénix del Otro Lado',cost:5,power:2200,type:'Personaje',art:'🔥🌌',ability:'Si fue evolucionado, al ser derrotado vuelve a tu mano.',onKO:'evolutionPhoenix',rarity:'Súper Rara',traits:['Evolution','Rabbit Hole']},
+ {id:'E31',name:'Maestro de las Formas',cost:5,power:1800,type:'Personaje',art:'🧙‍♂️🧬',ability:'Una vez por turno: tu próxima carta invocada mediante Evolución gana +500 este turno.',active:'evolutionNextBoost',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E32',name:'Avatar Evolutivo',cost:7,power:3300,type:'Personaje',art:'👤🧬',ability:'Si fue evolucionado, puede atacar inmediatamente.',onPlay:'evolutionRush',rarity:'Ultra Rara',traits:['Evolution']},
+ {id:'E33',name:'Coloso del Rabbit Hole',cost:8,power:3800,type:'Personaje',art:'🗿🐇',ability:'Si tienes 0 ❤️, gana +1000. Si fue evolucionado, puede atacar al Líder inmediatamente.',onPlay:'evolutionLeaderAttack',rarity:'Ultra Rara',traits:['Evolution','Rabbit Hole']},
+ {id:'E34',name:'Soberano del Otro Lado',cost:9,power:4300,type:'Personaje',art:'👑🌌',ability:'Al entrar: devuelve hasta 2 personajes enemigos de coste 4 o menos a la mano.',onPlay:'bounceTwo',rarity:'Ultra Rara',traits:['Evolution']},
+ {id:'E35',name:'Forma Perfecta',cost:10,power:5000,type:'Personaje',art:'✨🧬',ability:'Si fue evolucionada, gana +1000, roba 2 cartas y recupera 1 DON usado.',onPlay:'perfectEvolution',rarity:'Legendaria',traits:['Evolution','Legendaria']},
+ {id:'E36',name:'La Última Evolución',cost:11,power:5500,type:'Personaje',art:'🌌🧬',ability:'Solo puede ser invocada mediante Evolución. Al entrar puede atacar inmediatamente; si derrota un personaje, roba 2.',onPlay:'finalEvolution',onlyEvolution:true,rarity:'Legendaria',traits:['Evolution','Legendaria']},
+ {id:'E37',name:'Primera Evolución',cost:1,power:0,type:'Evento',art:'🧬1️⃣',ability:'Activa Evolución Alarmante sobre un personaje tuyo de Set 05/06. +1 Combo.',effect:'activateEvolution',rarity:'Común',traits:['Evolution']},
+ {id:'E38',name:'Evolución Forzada',cost:2,power:0,type:'Evento',art:'🧬⚡',ability:'Activa Evolución Alarmante. La carta invocada gana +500.',effect:'forcedEvolution',rarity:'Rara',traits:['Evolution']},
+ {id:'E39',name:'Segunda Forma',cost:2,power:0,type:'Evento',art:'2️⃣🧬',ability:'Un personaje gana +1000; si fue evolucionado, puede atacar inmediatamente.',effect:'secondForm',rarity:'Rara',traits:['Evolution']},
+ {id:'E40',name:'Mutación Inesperada',cost:3,power:0,type:'Evento',art:'🧬❓',ability:'Devuelve un personaje tuyo a la mano y permite evolucionar usando otro personaje válido.',effect:'unexpectedMutation',rarity:'Rara',traits:['Evolution']},
+ {id:'E41',name:'Salto Evolutivo',cost:3,power:0,type:'Evento',art:'🧬⬆️',ability:'Una carta evolucionada gana +1000.',effect:'evolutionJump',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E42',name:'Forma del Abismo',cost:4,power:0,type:'Evento',art:'🧬🌑',ability:'Un enemigo pierde 1000 poder y sus habilidades este turno.',effect:'abyssForm',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E43',name:'Evolución Incontrolable',cost:4,power:0,type:'Evento',art:'🧬💥',ability:'Activa Evolución Alarmante. La carta invocada puede atacar inmediatamente pero no recibe DON este turno. +2 Combo.',effect:'uncontrolledEvolution',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E44',name:'Herencia de la Madriguera',cost:2,power:0,type:'Evento',art:'🐇🧬',ability:'Recupera una carta de Set 05 de tu cementerio. +1 Combo.',effect:'recoverSet05',rarity:'Rara',traits:['Evolution','Rabbit Hole']},
+ {id:'E45',name:'Ruptura Evolutiva',cost:4,power:0,type:'Evento',art:'💥🧬',ability:'Derrota un enemigo de 1800 o menos; si usaste Evolución este turno, hasta 2300. +1 Combo.',effect:'evolutionKO',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E46',name:'Evolución Suprema',cost:5,power:0,type:'Evento',art:'🧬👑',ability:'Activa Evolución Alarmante. La carta invocada gana +1500. +2 Combo.',effect:'supremeEvolution',rarity:'Ultra Rara',traits:['Evolution']},
+ {id:'E47',name:'Forma Imposible',cost:6,power:0,type:'Evento',art:'🧬♾️',ability:'Evoluciona hacia una carta de coste 7 o más ignorando su coste. +2 Combo.',effect:'impossibleForm',rarity:'Ultra Rara',traits:['Evolution']},
+ {id:'E48',name:'Reescritura del Destino',cost:5,power:0,type:'Evento',art:'🔄🧬',ability:'Devuelve hasta 2 personajes tuyos a la mano y roba 3. +1 Combo.',effect:'rewriteDestiny',rarity:'Ultra Rara',traits:['Evolution']},
+ {id:'E49',name:'Evolución del Vacío',cost:6,power:0,type:'Evento',art:'🌑🧬',ability:'Todos los personajes enemigos pierden 1000 este turno. +2 Combo.',effect:'voidEvolution',rarity:'Ultra Rara',traits:['Evolution']},
+ {id:'E50',name:'Forma Definitiva',cost:7,power:0,type:'Evento',art:'🧬🔥',ability:'Activa Evolución Alarmante. La carta invocada gana +2000 y puede atacar al Líder inmediatamente. +2 Combo.',effect:'ultimateForm',rarity:'Legendaria',traits:['Evolution']},
+ {id:'E51',name:'Más Allá de la Madriguera',cost:8,power:0,type:'Evento',art:'🐇🧬🌌',ability:'Evoluciona hacia una carta de coste 10 o menos. Luego roba 2 y recupera 1 DON usado. +3 Combo.',effect:'beyondRabbitHole',rarity:'Legendaria',traits:['Evolution','Rabbit Hole']},
+ {id:'E52',name:'Fragmento Evolutivo',cost:1,power:0,type:'Recurso',art:'💠🧬',ability:'Roba 1 carta.',effect:'draw1',rarity:'Común',traits:['Evolution']},
+ {id:'E53',name:'Núcleo de Evolución',cost:2,power:0,type:'Recurso',art:'🔋🧬',ability:'+1 Combo.',effect:'comboPlus1',rarity:'Común',traits:['Evolution']},
+ {id:'E54',name:'ADN de la Madriguera',cost:2,power:0,type:'Recurso',art:'🧬🐇',ability:'Busca en las 5 primeras cartas una carta de Set 05/06.',effect:'searchEvolution',rarity:'Rara',traits:['Evolution','Rabbit Hole']},
+ {id:'E55',name:'Motor de Transformación',cost:3,power:0,type:'Recurso',art:'⚙️🧬',ability:'Recupera 1 DON usado.',effect:'recoverDon1',rarity:'Rara',traits:['Evolution']},
+ {id:'E56',name:'Memoria Evolutiva',cost:3,power:0,type:'Recurso',art:'📖🧬',ability:'Roba 2 y descarta 1.',effect:'draw2Discard1',rarity:'Rara',traits:['Evolution']},
+ {id:'E57',name:'Corazón de la Evolución',cost:4,power:0,type:'Recurso',art:'❤️🧬',ability:'Recupera una carta de Set 05/06 de tu cementerio.',effect:'recoverEvolutionCard',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E58',name:'Reactor de la Segunda Forma',cost:4,power:0,type:'Recurso',art:'⚛️🧬',ability:'Recupera 2 DON usados.',effect:'recoverDon2',rarity:'Súper Rara',traits:['Evolution']},
+ {id:'E59',name:'Archivo del Otro Lado',cost:5,power:0,type:'Recurso',art:'📚🌌',ability:'Roba 3 y recupera una carta de Set 05/06 del cementerio.',effect:'draw3RecoverEvolution',rarity:'Ultra Rara',traits:['Evolution']},
+ {id:'E60',name:'Núcleo de la Evolución Perfecta',cost:7,power:0,type:'Recurso',art:'💎🧬',ability:'Recupera 2 DON usados, roba 2 y mira las 5 primeras cartas.',effect:'perfectEvolutionResource',rarity:'Legendaria',traits:['Evolution','Legendaria']}
+];
+const ALL_LEADERS_V6=[...SET_01_LEADERS,...SET_02_LEADERS,...SET_03_LEADERS,...SET_04_LEADERS,...SET_05_LEADERS,...SET_06_LEADERS];
+const ALL_CARDS_V6=[...SET_01_CARDS,...SET_02_CARDS,...SET_03_CARDS,...SET_04_CARDS,...SET_05_CARDS,...SET_06_CARDS];
+GLTCG.LEADERS=ALL_LEADERS_V6;
+GLTCG.CARD_LIBRARY=ALL_CARDS_V6;
+GLTCG.SETS={
+ ORIGINS:{id:'ORIGINS',name:'SET 01 — ORIGINS',cards:SET_01_CARDS,leaders:SET_01_LEADERS,theme:'⚔️ Fundamentos'},
+ AWAKENING:{id:'AWAKENING',name:'SET 02 — AWAKENING',cards:SET_02_CARDS,leaders:SET_02_LEADERS,theme:'✨ Despertar'},
+ SHADOWS:{id:'SHADOWS',name:'SET 03 — SHADOWS',cards:SET_03_CARDS,leaders:SET_03_LEADERS,theme:'🌑 Sombras del Infierno'},
+ COLLISION:{id:'COLLISION',name:'SET 04 — COLLISION',cards:SET_04_CARDS,leaders:SET_04_LEADERS,theme:'💥 Combo'},
+ RABBIT_HOLE:{id:'RABBIT_HOLE',name:'SET 05 — RABBIT HOLE',cards:SET_05_CARDS,leaders:SET_05_LEADERS,theme:'🐇 Sobrevive al borde de la derrota'},
+ EVOLUTION_OF_HOLE:{id:'EVOLUTION_OF_HOLE',name:'SET 06 — EVOLUTION OF HOLE',cards:SET_06_CARDS,leaders:SET_06_LEADERS,theme:'🧬 Evolución Alarmante'}
+};
+GLTCG.SET_01=GLTCG.SETS.ORIGINS;GLTCG.SET_02=GLTCG.SETS.AWAKENING;GLTCG.SET_03=GLTCG.SETS.SHADOWS;GLTCG.SET_04=GLTCG.SETS.COLLISION;GLTCG.SET_05=GLTCG.SETS.RABBIT_HOLE;GLTCG.SET_06=GLTCG.SETS.EVOLUTION_OF_HOLE;

@@ -1,0 +1,12 @@
+GRAND LEGENDS TCG — SET 06: EVOLUTION OF HOLE
+
+60 cartas: E01-E60 (6 líderes + 54 cartas).
+
+Mecánica: EVOLUCIÓN ALARMANTE.
+Una vez por turno, el jugador puede enviar un personaje de Set 05 o Set 06 desde su campo al cementerio para invocar GRATIS una carta de su mano. El coste de la carta invocada se ignora.
+
+Coste estratégico: desde el momento en que un jugador usa Evolución Alarmante, SOMBRAS DEL INFIERNO queda bloqueada para ese jugador durante el resto de la partida.
+
+E36 La Última Evolución solo puede ser invocada mediante Evolución Alarmante.
+
+La integración conserva el estilo visual y la estructura del Web Oficial y amplía catálogo, filtro de líderes, constructor y estado de batalla.

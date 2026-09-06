@@ -12,40 +12,13 @@ function accountApi(path, options = {}) {
     return d;
   });
 }
-
-function openAccount() {
-  if (typeof openPlayerHub === 'function') {
-    openPlayerHub('account');
-  }
-}
-
-function closeAccount() {
-  if (typeof closePlayerHub === 'function') {
-    closePlayerHub();
-  }
-}
-
-function openProfile() {
-  if (typeof openPlayerHub === 'function') {
-    openPlayerHub('profile');
-  }
-}
-
-function closeProfile() {
-  if (typeof closePlayerHub === 'function') {
-    closePlayerHub();
-  }
-}
-
+function openAccount() { if (typeof openPlayerHub === 'function') openPlayerHub('account'); }
+function closeAccount() { if (typeof closePlayerHub === 'function') closePlayerHub(); }
+function openProfile() { if (typeof openPlayerHub === 'function') openPlayerHub('profile'); }
+function closeProfile() { if (typeof closePlayerHub === 'function') closePlayerHub(); }
 async function loadAccount() {
   if (!GLTCG.account.token) return;
-  try {
-    const d = await accountApi('/api/me');
-    GLTCG.account.user = d.user;
-  } catch {
-    GLTCG.account.token = '';
-    localStorage.removeItem('GLTCG_AUTH_TOKEN');
-  }
+  try { const d = await accountApi('/api/me'); GLTCG.account.user = d.user; }
+  catch { GLTCG.account.token = ''; localStorage.removeItem('GLTCG_AUTH_TOKEN'); }
 }
-
 window.addEventListener('DOMContentLoaded', loadAccount);

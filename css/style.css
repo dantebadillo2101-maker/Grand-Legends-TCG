@@ -2017,3 +2017,21 @@ button:disabled {
   background: rgba(148, 163, 184, 0.1);
   color: #e2e8f0;
 }
+/* ============================================================================
+   SET 06 — EVOLUTION OF HOLE
+   ============================================================================ */
+.btn-unit-evolution{
+  margin-top:5px;
+  border:1px solid #9b7cff;
+  background:linear-gradient(135deg,#241c52,#151b36);
+  color:#efe9ff;
+  box-shadow:0 0 12px #7656ff55;
+}
+.btn-unit-evolution:hover:not(:disabled){
+  filter:brightness(1.15);
+  transform:translateY(-1px);
+}
+.evolution-panel{
+  border-color:#7c5cff !important;
+  box-shadow:0 0 18px #5d43c833;
+}

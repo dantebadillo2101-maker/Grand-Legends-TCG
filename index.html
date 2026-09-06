@@ -265,8 +265,8 @@
       <h1 id="mainMenuTitle" class="main-menu-title">GRAND LEGENDS TCG</h1>
       <p class="main-menu-subtitle">El juego de cartas coleccionables táctico y competitivo</p>
       <div class="set-mini-tag">
-        <span>📚 5 Expansiones Activas:</span>
-        <b>ORIGINS</b> · <b>AWAKENING</b> · <b>SHADOWS</b> · <b>COLLISION</b> · <b>RABBIT HOLE</b>
+        <span>📚 6 Expansiones Activas:</span>
+        <b>ORIGINS</b> · <b>AWAKENING</b> · <b>SHADOWS</b> · <b>COLLISION</b> · <b>RABBIT HOLE</b> · <b>EVOLUTION OF HOLE</b>
       </div>
     </div>
 
@@ -299,7 +299,7 @@
         <div class="menu-card-icon">🎁</div>
         <div class="menu-card-body">
           <h3>Apertura de Sobres</h3>
-          <p>Abre boosters de los 5 sets y desbloquea cartas Ultra Raras.</p>
+          <p>Abre boosters de los 6 sets y desbloquea cartas Ultra Raras.</p>
         </div>
         <span class="menu-card-cta">Abrir ➔</span>
       </div>
@@ -420,6 +420,7 @@
         <button type="button" class="filter-tab" onclick="filterLeadersBySet('SHADOWS', this)">SET 03 · Shadows</button>
         <button type="button" class="filter-tab" onclick="filterLeadersBySet('COLLISION', this)">SET 04 · Collision</button>
         <button type="button" class="filter-tab" onclick="filterLeadersBySet('RABBIT HOLE', this)">SET 05 · Rabbit Hole</button>
+        <button type="button" class="filter-tab" onclick="filterLeadersBySet('EVOLUTION OF HOLE', this)">SET 06 · Evolution of Hole</button>
       </div>
     </div>
 
@@ -438,7 +439,7 @@
     </div>
     <div class="center" style="margin-bottom:14px;">
       <h2>📚 CATÁLOGO OFICIAL DE EXPANSIONES</h2>
-      <p class="subtitle-text">Explora las cartas, líderes y mecánicas de cada una de las 5 expansiones de Grand Legends.</p>
+      <p class="subtitle-text">Explora las cartas, líderes y mecánicas de cada una de las 6 expansiones de Grand Legends.</p>
     </div>
     <div id="setsGrid" class="sets-grid"></div>
   </div>
@@ -615,6 +616,11 @@
     <b>🌑 SOMBRAS DEL INFIERNO</b>
     <div id="shadowStatus">Cada jugador puede usarla 1 vez por partida cuando una carta sea derrotada.</div>
   </div>
+
+  <div class="shadow-panel evolution-panel">
+    <b>🧬 EVOLUCIÓN ALARMANTE</b>
+    <div id="evolutionStatus">P1: 🧬 disponible · P2: 🧬 disponible · Sombras se bloquea al evolucionar.</div>
+  </div>
   
   <h2>📜 Registro</h2>
   <div class="log" id="log"></div>
@@ -765,6 +771,7 @@
         <option value="SHADOWS">SET 03 — SHADOWS</option>
         <option value="COLLISION">SET 04 — COLLISION</option>
         <option value="RABBIT_HOLE">SET 05 — RABBIT HOLE</option>
+        <option value="EVOLUTION_OF_HOLE">SET 06 — EVOLUTION OF HOLE</option>
       </select>
     </div>
     

@@ -47,7 +47,9 @@ function createUnitState(card, temporaryPower = 0) {
     basePower: card.power,
     awakened: false,
     canAttackLeader: false,
-    secondAttackBoost: 0
+    secondAttackBoost: 0,
+    invokedByEvolution: false,
+    evolutionUsedThisTurn: false
   };
 }
 
@@ -59,6 +61,7 @@ function resetUnitForTurn(unit) {
   unit.hasAttacked = false;
   unit.canAttackLeader = false;
   unit.secondAttackBoost = 0;
+  unit.evolutionUsedThisTurn = false;
 }
 
 const rules = { validateCardData, validateDeckData, canAttackLeaderThroughField, createUnitState, resetUnitForTurn };
