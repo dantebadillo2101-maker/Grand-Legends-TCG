@@ -11,6 +11,7 @@ se estaran haciendo actualizaciones cada cierto tiempo ademas , en las cuales se
 - SET 04 - Collision
 - SET 05 - RABBIT HOLE
 - set 06 - EVOLUTION OF HOLE
+- set 07 - LOS KOREANOS DEL FIN
 - VS IA
 - 2 jugadores local
 - Deck Builder
