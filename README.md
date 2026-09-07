@@ -20,6 +20,7 @@ se estaran haciendo actualizaciones cada cierto tiempo ademas , en las cuales se
 - Online desactivado temporalmente
 - Pruebas de reglas en `tests/rules.test.js`
 
+  
 ## Pruebas
 
 Con Node.js instalado, ejecuta `node tests/rules.test.js` desde la raiz del proyecto.
