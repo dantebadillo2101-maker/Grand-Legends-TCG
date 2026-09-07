@@ -19,6 +19,8 @@ se estaran haciendo actualizaciones cada cierto tiempo ademas , en las cuales se
 - Cuentas locales mediante localStorage
 - Online desactivado temporalmente
 - Pruebas de reglas en `tests/rules.test.js`
+##  TUTORIAL PARA JUGAR 
+[Tutorial oficial — Grand Legends TCG.pdf](https://github.com/user-attachments/files/31891259/Tutorial.oficial.Grand.Legends.TCG.pdf)
 
   
 ## Pruebas
