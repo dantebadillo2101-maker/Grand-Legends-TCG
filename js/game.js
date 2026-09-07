@@ -23,7 +23,7 @@ let p1DonDeck = [], p2DonDeck = [], p1DonReserve = [], p2DonReserve = [];
 let customDeck = [];
 
 let p1hp = 5, p2hp = 5, p1shield = 3, p2shield = 3;
-let p1max = 3, p2max = 2, p1don = 3, p2don = 2;
+let p1max = 5, p2max = 5, p1don = 5, p2don = 5;
 let p1leaderDon = 0, p2leaderDon = 0;
 
 let active = 1, turn = 1, gameOver = false, aiBusy = false, boost = 0, p2Boost = 0;
@@ -34,6 +34,8 @@ let battleStats = {
   unitsDefeated: 0,
   cardsPlayed: 0,
   donAttached: 0,
+  attacksMade: 0,
+  leaderAttacks: 0,
   turns: 1,
   startTime: Date.now()
 };
@@ -45,6 +47,8 @@ function resetBattleStats() {
     unitsDefeated: 0,
     cardsPlayed: 0,
     donAttached: 0,
+    attacksMade: 0,
+    leaderAttacks: 0,
     turns: 1,
     startTime: Date.now()
   };
@@ -96,12 +100,172 @@ let selectedDonIndex = null;
 let deckBuilderOpenedFrom = 'menu';
 let currentLeaderFilter = 'ALL';
 
+// ==========================================================================
+// TORNEO VS IA
+// ==========================================================================
+let tournamentState = {
+  active: false,
+  difficulty: 'normal',
+  stage: 0,
+  wins: 0,
+  losses: 0,
+  opponents: [],
+  history: []
+};
+let tournamentCurrentOpponent = null;
+
+function tournamentDifficultyLabel(key) {
+  const cfg = GLTCG.ai?.difficulties?.[key];
+  return cfg ? cfg.label : key;
+}
+
+function startTournamentMode() {
+  closeLocalMode();
+  const modal = document.getElementById('tournamentModal');
+  if (modal) modal.classList.add('open');
+  renderTournamentSetup();
+}
+
+function closeTournamentModal() {
+  document.getElementById('tournamentModal')?.classList.remove('open');
+}
+
+function abandonTournament() {
+  tournamentState.active = false;
+  tournamentCurrentOpponent = null;
+  closeTournamentModal();
+  openMainMenu();
+}
+
+function chooseTournamentDifficulty(key) {
+  if (!GLTCG.ai?.difficulties?.[key]) key = 'normal';
+  setAIDifficulty(key);
+  tournamentState = {
+    active: true, difficulty: key, stage: 0, wins: 0, losses: 0,
+    opponents: [], history: []
+  };
+  const pool = LEADERS.slice().sort(() => Math.random() - 0.5);
+  const names = ['⚔️ Rival de Apertura','🌑 Maestro de las Sombras','💥 Estratega de Collision','🐇 Superviviente del Rabbit Hole','🧬 Evolucionista','🎤 Maestro del Fin','💀 Jefe del Torneo'];
+  for (let i=0;i<7;i++) {
+    const leader = pool[i % pool.length];
+    tournamentState.opponents.push({
+      id: 'TO_' + i + '_' + leader.id,
+      name: names[i],
+      leaderId: leader.id,
+      leaderName: leader.name,
+      leaderArt: leader.art,
+      deck: makeAIDeck()
+    });
+  }
+  tournamentCurrentOpponent = tournamentState.opponents[0];
+  closeTournamentModal();
+  localMode = 'ai';
+  // El líder del jugador se elige una sola vez y se conserva durante todo el torneo.
+  openLeaderForLocal();
+}
+
+function renderTournamentSetup() {
+  const box = document.getElementById('tournamentSetup');
+  if (!box) return;
+  const current = tournamentState.difficulty || 'normal';
+  box.innerHTML = ['baja','normal','dificil'].map(key => {
+    const cfg = GLTCG.ai.difficulties[key];
+    const selected = current === key ? ' selected' : '';
+    return '<button class="tournament-difficulty' + selected + '" onclick="chooseTournamentDifficulty(\'' + key + '\')">' +
+      (key==='baja'?'🟢':key==='normal'?'🟡':'🔴') + ' <b>' + cfg.label + '</b>' +
+      '<span>' + (key==='baja'?'IA accesible para aprender':key==='normal'?'IA equilibrada y táctica':'IA agresiva y exigente') + '</span></button>';
+  }).join('');
+}
+
+function tournamentStageName(stage) {
+  return stage === 0 ? 'CUARTOS DE FINAL' : stage === 1 ? 'SEMIFINAL' : 'GRAN FINAL';
+}
+
+function renderTournamentBracket() {
+  const box = document.getElementById('tournamentBracket');
+  if (!box || !tournamentState.active) return;
+  const names = tournamentState.opponents.map((o,i) => {
+    const status = i < tournamentState.stage ? '✅' : i === tournamentState.stage ? '⚔️' : '🔒';
+    return '<div class="tournament-opponent ' + (i===tournamentState.stage?'current':'') + '"><span>' + status + '</span><b>' + o.name + '</b><small>' + o.leaderArt + ' ' + o.leaderName + '</small></div>';
+  }).join('');
+  box.innerHTML = '<div class="tournament-progress"><b>🏆 Camino al campeonato</b><span>' + tournamentStageName(tournamentState.stage) + ' · ' + tournamentState.wins + '/3 victorias</span></div>' + names;
+}
+
+function openTournamentBracket(message='') {
+  const modal = document.getElementById('tournamentModal');
+  const setup = document.getElementById('tournamentSetup');
+  const bracket = document.getElementById('tournamentBracket');
+  const title = document.getElementById('tournamentModalTitle');
+  const msg = document.getElementById('tournamentMessage');
+  if (!modal) return;
+  if (setup) setup.style.display='none';
+  if (bracket) bracket.style.display='block';
+  if (title) title.textContent='🏆 TORNEO VS IA';
+  if (msg) msg.textContent=message || 'Supera a tres rivales de IA y conviértete en campeón.';
+  const nextBtn=document.getElementById('tournamentNextBtn');
+  if(nextBtn) nextBtn.style.display=tournamentState.active ? 'inline-block' : 'none';
+  renderTournamentBracket();
+  modal.classList.add('open');
+}
+
+function startTournamentMatch() {
+  if (!tournamentState.active || tournamentState.stage > 2) return;
+  tournamentCurrentOpponent = tournamentState.opponents[tournamentState.stage];
+  aiLeader = LEADERS.find(l => l.id === tournamentCurrentOpponent.leaderId) || LEADERS[1] || LEADERS[0];
+  closeTournamentModal();
+  showGame();
+  reset();
+  log('🏆 TORNEO: ' + tournamentStageName(tournamentState.stage) + ' contra ' + tournamentCurrentOpponent.name + '.');
+  log('🤖 Rival: ' + aiLeader.name + ' · Dificultad: ' + tournamentDifficultyLabel(tournamentState.difficulty) + '.');
+  render();
+}
+
+function tournamentMatchFinished(won) {
+  tournamentState.history.push({ stage:tournamentState.stage, won:!!won, opponent:tournamentCurrentOpponent?.name || 'Rival IA', leader:tournamentCurrentOpponent?.leaderName || aiLeader?.name || 'IA' });
+  if (!won) {
+    tournamentState.losses++;
+    tournamentState.active = false;
+    const msg='💀 Has sido eliminado del torneo. El rival fue ' + (tournamentCurrentOpponent?.name || 'la IA') + '.';
+    setTimeout(() => {
+      openTournamentBracket(msg);
+      const btn=document.getElementById('tournamentNextBtn');
+      if(btn){ btn.style.display='none'; }
+    }, 500);
+    return;
+  }
+  tournamentState.wins++;
+  tournamentState.stage++;
+  if (tournamentState.stage >= 3) {
+    tournamentState.active = false;
+    setTimeout(() => {
+      const modal=document.getElementById('tournamentModal');
+      const setup=document.getElementById('tournamentSetup');
+      const bracket=document.getElementById('tournamentBracket');
+      const title=document.getElementById('tournamentModalTitle');
+      const msg=document.getElementById('tournamentMessage');
+      if(setup) setup.style.display='none';
+      if(bracket){ bracket.style.display='block'; bracket.innerHTML='<div class="tournament-champion">🏆<strong>¡CAMPEÓN DEL TORNEO!</strong><span>Has superado 3 rondas en dificultad ' + tournamentDifficultyLabel(tournamentState.difficulty) + '.</span></div>'; }
+      if(title) title.textContent='🏆 ¡TORNEO COMPLETADO!';
+      if(msg) msg.textContent='La arena ha sido conquistada. ¡Tu mazo ha sobrevivido al camino completo!';
+      const btn=document.getElementById('tournamentNextBtn');
+      if(btn) btn.style.display='none';
+      if(modal) modal.classList.add('open');
+    },500);
+    return;
+  }
+  const next=tournamentState.opponents[tournamentState.stage];
+  setTimeout(() => openTournamentBracket('🔥 ¡Victoria! Prepárate para ' + tournamentStageName(tournamentState.stage) + ': ' + next.name + '.'), 500);
+}
+
 const COLLECTION_KEY = "gltcg_collection_v21";
 const PACK_KEY = "gltcg_pack_openings_v22";
 const PROGRESS_KEY = "GLTCG_PROGRESS_V1";
 const ACCOUNTS_KEY = "GLTCG_ACCOUNTS_V1";
 const SESSION_KEY = "GLTCG_SESSION_V1";
-const STORAGE_SCHEMA_VERSION = 2;
+const STORAGE_SCHEMA_VERSION = 3;
+const SAVED_DECKS_KEY = "GLTCG_SAVED_DECKS_V1";
+let savedDecks = [];
+let activeDeckId = null;
 const STORAGE_SCHEMA_KEY = "GLTCG_STORAGE_SCHEMA";
 
 function loadStoredObject(key) {
@@ -161,6 +325,7 @@ function migrateStorage() {
 const migratedStorage = migrateStorage();
 let collection = migratedStorage.collection;
 let packOpenings = migratedStorage.packOpenings;
+savedDecks = loadSavedDecks();
 
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
@@ -237,6 +402,88 @@ function currentUser() {
   return localStorage.getItem(SESSION_KEY) || "";
 }
 
+function loadSavedDecks() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SAVED_DECKS_KEY) || "[]");
+    return Array.isArray(raw) ? raw.filter(d => d && typeof d === "object" && Array.isArray(d.cards)) : [];
+  } catch (e) { return []; }
+}
+
+function saveSavedDecks() {
+  localStorage.setItem(SAVED_DECKS_KEY, JSON.stringify(savedDecks));
+}
+
+function getDeckLeader(deck) {
+  return LEADERS.find(l => l.id === deck?.leaderId) || selectedLeader || LEADERS[0];
+}
+
+function saveCurrentDeckAs() {
+  const validation = validateCustomDeck();
+  if (!validation.valid) {
+    alert('⚠️ No puedes guardar este mazo todavía.\n\n' + validation.errors.join('\n'));
+    return;
+  }
+  const name = prompt('Nombre del mazo:', 'Mi nuevo mazo');
+  if (!name || !name.trim()) return;
+  const leader = selectedLeader || LEADERS[0];
+  const deck = { id: 'deck_' + Date.now(), name: name.trim().slice(0, 40), leaderId: leader.id, cards: customDeck.map(cloneCard), createdAt: Date.now(), updatedAt: Date.now() };
+  savedDecks.push(deck);
+  activeDeckId = deck.id;
+  saveSavedDecks();
+  saveCurrentProgress();
+  renderDeckBuilder();
+  log('💾 Mazo guardado: ' + deck.name + ' con líder ' + leader.name + '.');
+}
+
+function overwriteActiveDeck() {
+  if (!activeDeckId) return saveCurrentDeckAs();
+  const deck = savedDecks.find(d => d.id === activeDeckId);
+  if (!deck) return saveCurrentDeckAs();
+  const validation = validateCustomDeck();
+  if (!validation.valid) { alert('⚠️ El mazo no es válido.\n\n' + validation.errors.join('\n')); return; }
+  deck.cards = customDeck.map(cloneCard);
+  deck.leaderId = (selectedLeader || LEADERS[0]).id;
+  deck.updatedAt = Date.now();
+  saveSavedDecks();
+  saveCurrentProgress();
+  renderDeckBuilder();
+}
+
+function loadSavedDeck(id) {
+  const deck = savedDecks.find(d => d.id === id);
+  if (!deck) return;
+  customDeck = deck.cards.map(cloneCard);
+  activeDeckId = deck.id;
+  const leader = getDeckLeader(deck);
+  selectedLeader = leader;
+  localStorage.setItem('GLTCG_SELECTED_LEADER', leader.id);
+  saveCurrentProgress();
+  renderDeckBuilder();
+}
+
+function duplicateSavedDeck(id) {
+  const deck = savedDecks.find(d => d.id === id);
+  if (!deck) return;
+  const copy = { ...deck, id: 'deck_' + Date.now(), name: deck.name + ' (copia)', cards: deck.cards.map(cloneCard), createdAt: Date.now(), updatedAt: Date.now() };
+  savedDecks.push(copy); activeDeckId = copy.id; saveSavedDecks(); renderDeckBuilder();
+}
+
+function deleteSavedDeck(id) {
+  const deck = savedDecks.find(d => d.id === id);
+  if (!deck) return;
+  if (!confirm('¿Eliminar el mazo "' + deck.name + '"?')) return;
+  savedDecks = savedDecks.filter(d => d.id !== id);
+  if (activeDeckId === id) activeDeckId = null;
+  saveSavedDecks(); renderDeckBuilder();
+}
+
+function useActiveDeck() {
+  const validation = validateCustomDeck();
+  if (!validation.valid) { alert('⚠️ El mazo no es válido.\n\n' + validation.errors.join('\n')); return; }
+  saveCurrentProgress();
+  closeDeckBuilder();
+}
+
 function saveCollection() {
   localStorage.setItem(COLLECTION_KEY, JSON.stringify(collection));
   localStorage.setItem(PACK_KEY, String(packOpenings));
@@ -270,6 +517,8 @@ function captureProgress() {
     collection: collection,
     packOpenings: Math.max(10, Number(packOpenings) || 10),
     customDeck: customDeck,
+    savedDecks: savedDecks,
+    activeDeckId: activeDeckId,
     wins: 0, losses: 0, level: 1,
     savedAt: Date.now()
   };
@@ -297,6 +546,8 @@ function loadCurrentProgress() {
   if (p && typeof p.packOpenings !== "undefined") packOpenings = Math.max(10, Number(p.packOpenings) || 10);
   else if (u && typeof u.packOpenings !== "undefined") packOpenings = Math.max(10, Number(u.packOpenings) || 10);
   if (p && Array.isArray(p.customDeck)) customDeck = p.customDeck;
+  if (p && Array.isArray(p.savedDecks)) { savedDecks = p.savedDecks; saveSavedDecks(); }
+  if (p && p.activeDeckId) activeDeckId = p.activeDeckId;
 }
 
 function rarityClass(r) {
@@ -424,7 +675,7 @@ function selectLeader(id, player = 1) {
   }
   selectedLeader = found;
   const others = LEADERS.filter(l => l.id !== found.id);
-  aiLeader = others[Math.floor(Math.random() * Math.max(1, others.length))] || LEADERS[0];
+  if (!(tournamentState.active && tournamentCurrentOpponent)) { aiLeader = others[Math.floor(Math.random() * Math.max(1, others.length))] || LEADERS[0]; }
   localStorage.setItem('GLTCG_SELECTED_LEADER', selectedLeader.id);
   
   if (localMode === 'pvp') {
@@ -514,17 +765,36 @@ function renderDeckBuilder() {
     validationMessage.className = deckValidation.valid ? 'deck-validation valid' : 'deck-validation invalid';
   }
 
+  const savedBox = document.getElementById('savedDecksList');
+  if (savedBox) {
+    savedBox.innerHTML = '';
+    if (!savedDecks.length) savedBox.innerHTML = '<div class="saved-deck-empty">📭 No tienes mazos guardados todavía.</div>';
+    savedDecks.forEach(d => {
+      const leader = getDeckLeader(d);
+      const item = document.createElement('div');
+      item.className = 'saved-deck-item' + (d.id === activeDeckId ? ' active' : '');
+      item.innerHTML = '<div><b>🃏 ' + d.name.replace(/</g,'&lt;') + '</b><small>👑 ' + leader.name.replace(/</g,'&lt;') + ' · ' + d.cards.length + '/40</small></div>' +
+        '<div class="saved-deck-actions"><button type="button" class="small">▶️ Usar</button><button type="button" class="small">✏️ Cargar</button><button type="button" class="small">📋</button><button type="button" class="small">🗑️</button></div>';
+      const bs=item.querySelectorAll('button');
+      bs[0].onclick=()=>{loadSavedDeck(d.id); useActiveDeck();};
+      bs[1].onclick=()=>loadSavedDeck(d.id);
+      bs[2].onclick=()=>duplicateSavedDeck(d.id);
+      bs[3].onclick=()=>deleteSavedDeck(d.id);
+      savedBox.appendChild(item);
+    });
+  }
+
   LIBRARY.filter(c => c.name.toLowerCase().includes(q) && (sv === 'ALL' || setOfCard(c) === sv)).forEach(c => {
     let count = customDeck.filter(x => x.name === c.name).length;
     let e = document.createElement("div");
     e.className = "deckitem";
     const cannotAdd = count >= 4 || customDeck.length >= 40;
     e.innerHTML = "<div style='font-size:40px'>" + (c.art || '🃏') + "</div><b>" + c.name + "</b><br>⚡ " + c.cost + " · 💥 " + c.power + "<br><small>⭐ " + (c.rarity || 'Común') + "</small><br><small>" + count + "/4 copias</small><br><button class='small' " + (cannotAdd ? "disabled" : "") + ">＋ Añadir</button> <button class='small' " + (count <= 0 ? "disabled" : "") + ">－ Quitar</button>";
-    e.querySelectorAll("button")[0].onclick = () => { if (customDeck.length < 40 && count < 4) { customDeck.push(cloneCard(c)); renderDeckBuilder(); } };
+    e.querySelectorAll("button")[0].onclick = () => { if (customDeck.length < 40 && count < 4) { customDeck.push(cloneCard(c)); saveCurrentProgress(); renderDeckBuilder(); } };
     e.querySelectorAll("button")[1].onclick = () => {
       let ix = customDeck.findIndex(x => x.name === c.name);
       if (ix >= 0) customDeck.splice(ix, 1);
-      renderDeckBuilder();
+      saveCurrentProgress(); renderDeckBuilder();
     };
     g.appendChild(e);
   });
@@ -857,17 +1127,40 @@ function tutorialNext() { closePlayerHub(); startGame(); }
    LÓGICA DEL MOTOR DE BATALLA Y COMBATE JUSTO
    ========================================================================== */
 function makeDeck() {
-  let d = [];
   const customDeckValidation = customDeck.length ? validateCustomDeck() : { valid: true };
   let source = customDeck.length && customDeckValidation.valid ? customDeck : LIBRARY;
-  if (customDeck.length && !customDeckValidation.valid) {
-    log('⚠️ Tu mazo personalizado no es válido. Se usará el mazo predeterminado.');
+  if (customDeck.length && !customDeckValidation.valid) log('⚠️ Tu mazo personalizado no es válido. Se usará el mazo predeterminado.');
+  const d = [];
+  if (source === customDeck) {
+    source.forEach(c => d.push(cloneCard(c)));
+    while (d.length < 40) d.push(cloneCard(LIBRARY[d.length % LIBRARY.length]));
+    return shuffle(d.slice(0, 40));
   }
-  for (let c of source) {
-    for (let i = 0; i < 4; i++) d.push(cloneCard(c));
+  return makeAIDeck();
+}
+
+function makeAIDeck() {
+  const chars = LIBRARY.filter(c => c.type === 'Personaje' && !c.onlyEvolution);
+  const events = LIBRARY.filter(c => c.type === 'Evento' && !c.onlyEvolution);
+  const resources = LIBRARY.filter(c => c.type === 'Recurso' && !c.onlyEvolution);
+  const d=[];
+  const addPool=(pool,n)=>{
+    for(let i=0;i<n;i++){
+      const c=pool[Math.floor(Math.random()*pool.length)];
+      d.push(cloneCard(c));
+    }
+  };
+  addPool(chars,26); addPool(events,10); addPool(resources,4);
+  // Limitar copias a 4 sin convertir el mazo en una colección de recursos.
+  const counts={};
+  for(let i=d.length-1;i>=0;i--){
+    const id=d[i].id; counts[id]=(counts[id]||0)+1;
+    if(counts[id]>4){
+      const replacement=chars.concat(events).find(c=>(counts[c.id]||0)<4);
+      if(replacement){ d[i]=cloneCard(replacement); counts[replacement.id]=(counts[replacement.id]||0)+1; }
+    }
   }
-  while (d.length < 40) d.push(cloneCard(LIBRARY[d.length % LIBRARY.length]));
-  return shuffle(d.slice(0, 40));
+  return shuffle(d.slice(0,40));
 }
 
 function makeDonDeck() {
@@ -1078,16 +1371,42 @@ function useCantoInfernal(player = 1, options = {}) {
   return roll;
 }
 
-function drawDon(p) {
-  if (p === 1 && p1DonDeck.length && p1DonReserve.length < p1max) {
-    p1DonReserve.push(p1DonDeck.pop());
-    return true;
+// DON infinito: no dependemos de un mazo físico. Cada llamada genera
+// directamente un DON nuevo. El turno normal usa +2 DON.
+function drawDon(p, amount = 1) {
+  const n = Math.max(0, Number(amount) || 0);
+  if (p === 1) {
+    for (let i = 0; i < n; i++) p1DonReserve.push({ id: 'DON_INF_P1_' + Date.now() + '_' + i, name: 'DON!!', cost: 0, power: 0, type: 'Recurso', art: '🪙' });
+    p1don = p1DonReserve.length;
+    return n;
   }
-  if (p === 2 && p2DonDeck.length && p2DonReserve.length < p2max) {
-    p2DonReserve.push(p2DonDeck.pop());
-    return true;
+  if (p === 2) {
+    for (let i = 0; i < n; i++) p2DonReserve.push({ id: 'DON_INF_P2_' + Date.now() + '_' + i, name: 'DON!!', cost: 0, power: 0, type: 'Recurso', art: '🪙' });
+    p2don = p2DonReserve.length;
+    return n;
   }
-  return false;
+  return 0;
+}
+
+function recoverUsedDon(player = 1, amount = 1) {
+  // El motor no mantiene una zona separada de DON usados: el DON gastado
+  // deja de estar en la reserva. Para los efectos que "recuperan DON",
+  // devolvemos hasta `amount` DON desde el mazo DON a la reserva, respetando
+  // siempre el máximo disponible del jugador.
+  const isP1 = player === 1;
+  const deck = isP1 ? p1DonDeck : p2DonDeck;
+  const reserve = isP1 ? p1DonReserve : p2DonReserve;
+  const max = isP1 ? p1max : p2max;
+  const wanted = Math.max(0, Number(amount) || 0);
+  let recovered = 0;
+  while (recovered < wanted) {
+    reserve.push({ id: 'DON_RECOVER_' + player + '_' + Date.now() + '_' + recovered, name: 'DON!!', cost: 0, power: 0, type: 'Recurso', art: '🪙' });
+    recovered++;
+  }
+  if (isP1) { p1max = Math.max(p1max, reserve.length); p1don = reserve.length; }
+  else { p2max = Math.max(p2max, reserve.length); p2don = reserve.length; }
+  if (recovered) log('🪙 ' + (isP1 ? 'Recuperaste ' : 'La IA recuperó ') + recovered + ' DON.');
+  return recovered;
 }
 
 function payP1(n) {
@@ -1154,7 +1473,7 @@ function applyCollisionCombo(c, player = 1, force = false) {
     case 'draw2Discard': player === 1 ? (drawP1(), drawP1()) : (drawP2(), drawP2()); if (handRef.length) handRef.shift(); break;
     case 'ready': { const u = field.find(x => x.id === c.id) || field[0]; if (u) u.summoningSickness = false; break; }
     case 'debuff500': { const f = player === 1 ? p2Field : p1Field; if (f[0]) f[0].tempBoost = (f[0].tempBoost || 0) - 500; break; }
-    case 'donRecover': { const d = player === 1 ? p1DonDeck : p2DonDeck, r = player === 1 ? p1DonReserve : p2DonReserve; if (d.length) r.push(d.pop()); break; }
+    case 'donRecover': { drawDon(player, 1); break; }
     case 'boostOther500': { const u = field.find(x => x.id !== c.id) || field[0]; if (u) u.tempBoost = (u.tempBoost || 0) + 500; break; }
     case 'peekTop': { const d = player === 1 ? p1Deck : p2Deck; if (d.length) log('🔭 Combo: ' + d[d.length - 1].name + ' está arriba del mazo.'); break; }
     case 'peekHand': log('👀 Combo: mira una carta de la mano rival.'); break;
@@ -1380,6 +1699,7 @@ function attackCharacter(i, j) {
   }
   
   a.hasAttacked = true;
+  battleStats.attacksMade++;
   addCombo(1, 1);
   if (selectedLeader.id === 'L01' && !leaderAbilityUsed) {
     a.tempBoost = (a.tempBoost || 0) + 500;
@@ -1444,6 +1764,8 @@ function attackLeader() {
   
   a.hasAttacked = true;
   a.canAttackLeader = false;
+  battleStats.attacksMade++;
+  battleStats.leaderAttacks++;
   addCombo(1, 1);
   
   if (p2shield > 0) {
@@ -1653,7 +1975,7 @@ function applyCardEffect(c, player = 1, context = {}) {
   else if (e === 'ready') { if (ownField.length) ownField[0].summoningSickness = false; }
   else if (e === 'prevent') window['_preventLeaderDamageP' + player] = true;
   else if (e === 'team300') ownField.forEach(x => x.tempBoost = (x.tempBoost || 0) + 300);
-  else if (e === 'donRecover') { const donDeck = player === 1 ? p1DonDeck : p2DonDeck; const donReserve = player === 1 ? p1DonReserve : p2DonReserve; if (donDeck.length) donReserve.push(donDeck.pop()); }
+  else if (e === 'donRecover') { drawDon(player, 1); }
   else if (e === 'comboPlus1' || e === 'comboPlus2' || e === 'comboPlus3') addCombo(player, Number(e.slice(-1)));
   else if (e === 'comboPlus3Temp') { if (player === 1) comboBonusP1 += 3; else comboBonusP2 += 3; }
   else if (e === 'collisionDraw') { draw(); if (comboHas(player, 3)) { draw(); if (ownHand.length) ownHand.shift(); } }
@@ -1695,10 +2017,8 @@ function applyCardEffect(c, player = 1, context = {}) {
     }
   }
   else if (e === 'donRecover2' || e === 'legendCore') {
-    const donDeck = player === 1 ? p1DonDeck : p2DonDeck;
-    const donReserve = player === 1 ? p1DonReserve : p2DonReserve;
-    const amount = e === 'donRecover2' || e === 'legendCore' ? 2 : 1;
-    for (let i = 0; i < amount && donDeck.length; i++) donReserve.push(donDeck.pop());
+    const amount = 2;
+    drawDon(player, amount);
     if (e === 'legendCore') { draw(); draw(); draw(); draw(); }
   }
   else if (e === 'lowLifeBoost') { if ((player === 1 ? p1hp : p2hp) <= 2) { const u = ownField[ownField.length - 1]; if (u) u.tempBoost = (u.tempBoost || 0) + 300; } if ((player === 1 ? p1hp : p2hp) <= 1) draw(); }
@@ -1710,7 +2030,7 @@ function applyCardEffect(c, player = 1, context = {}) {
   else if (e === 'recoverEvolutionCard') { const found = [...ownGrave].reverse().find(x => x.id && (x.id.startsWith('R') || x.id.startsWith('E'))); if (found) { ownGrave.splice(ownGrave.indexOf(found),1); ownHand.push(found); } }
   else if (e === 'evolutionSupport') { ownField.forEach(u => { if (u.invokedByEvolution) u.tempBoost = (u.tempBoost || 0) + 500; }); }
   else if (e === 'evolutionRush' || e === 'evolutionAttackReady' || e === 'evolutionLeaderAttack') { const u = ownField[ownField.length - 1]; if (u && context.evolved) { u.summoningSickness = false; if (e === 'evolutionLeaderAttack') u.canAttackLeader = true; } }
-  else if (e === 'evolutionKing') { if (context.evolved) { const d = player === 1 ? p1DonDeck : p2DonDeck, r = player === 1 ? p1DonReserve : p2DonReserve; if (d.length) r.push(d.pop()); draw(); draw(); } }
+  else if (e === 'evolutionKing') { if (context.evolved) { drawDon(player, 1); draw(); draw(); } }
   else if (e === 'evolutionEntity') { /* activo por botón, ver activateUnitAbility */ }
   else if (e === 'evolutionNextBoost') { if (player === 1) evolutionNextBoostP1 = true; else evolutionNextBoostP2 = true; }
   else if (e === 'bounceTwo') { let count = 0; for (let i = enemyField.length - 1; i >= 0 && count < 2; i--) if (enemyField[i].cost <= 4) { ownHand.push(enemyField.splice(i,1)[0]); count++; } }
@@ -2048,7 +2368,7 @@ function activateEvolution(player = 1, sourceIndex = null, handIndex = null, opt
   if (target.onlyEvolution !== true && target.type === 'Personaje' && target.id === 'E36' && !isEvolutionEligible(source)) return false;
   const attached = source.attached || 0;
   if (attached) {
-    for (let i = 0; i < attached && state.donReserve.length < 10; i++) state.donReserve.push({ id: 'DON_RETURN_' + Date.now() + '_' + i, name: 'DON!!', cost: 0, power: 0, type: 'Recurso', art: '🪙' });
+    for (let i = 0; i < attached; i++) state.donReserve.push({ id: 'DON_RETURN_' + Date.now() + '_' + i, name: 'DON!!', cost: 0, power: 0, type: 'Recurso', art: '🪙' });
   }
   state.field.splice(sourceIndex, 1);
   state.grave.push(source);
@@ -2101,7 +2421,8 @@ function checkWin() {
     if (document.getElementById("aiStatus")) document.getElementById("aiStatus").textContent = "🏆 P2 ganó.";
     render();
     setTimeout(() => {
-      showSoloPostGame({ won: false, winner: 2 });
+      if (tournamentState.active) tournamentMatchFinished(false);
+      else showSoloPostGame({ won: false, winner: 2 });
     }, 700);
   }
   if (p2hp <= 0) {
@@ -2112,7 +2433,8 @@ function checkWin() {
     if (document.getElementById("aiStatus")) document.getElementById("aiStatus").textContent = "💀 P2 perdió.";
     render();
     setTimeout(() => {
-      showSoloPostGame({ won: true, winner: 1 });
+      if (tournamentState.active) tournamentMatchFinished(true);
+      else showSoloPostGame({ won: true, winner: 1 });
     }, 700);
   }
 }
@@ -2122,7 +2444,7 @@ function checkWin() {
    ========================================================================== */
 async function aiTurn() {
   if (localMode === "pvp") return;
-  const aiPolicy = GLTCG.ai.getDifficulty();
+  const aiPolicy = GLTCG.ai.difficulties[tournamentState.active ? tournamentState.difficulty : undefined] || GLTCG.ai.getDifficulty();
   aiBusy = true;
   try {
   if (document.getElementById("aiStatus")) document.getElementById("aiStatus").textContent = "🟡 Robando carta...";
@@ -2131,9 +2453,9 @@ async function aiTurn() {
   await delay(900);
   
   drawP2();
-  drawDon(2);
+  p2max += 2;
+  drawDon(2, 2);
   p2don = p2DonReserve.length;
-  p2max = Math.min(10, p2max + 1);
   
   p2Field.forEach(GLTCG.rules.resetUnitForTurn);
   
@@ -2144,7 +2466,13 @@ async function aiTurn() {
 
   if (!cantoUsedP2 && aiLeader?.id?.startsWith('T')) {
     setAIRealtime('Activando Canto Infernal...');
-    useCantoInfernal(2, {fromAI:true});
+    try {
+      cantoUsedP2 = true;
+      useCantoInfernal(2, {fromAI:true});
+    } catch (error) {
+      console.error('AI Canto error:', error);
+      // El error queda en consola; la IA continúa sin ensuciar el registro de combate.
+    }
     render();
     await delay(700);
   }
@@ -2159,7 +2487,11 @@ async function aiTurn() {
       setAIRealtime('Activando Evolución Alarmante...');
       render();
       await delay(700);
-      activateEvolution(2, sourceIndex, targetIndex, { fromAI: true });
+      try {
+        activateEvolution(2, sourceIndex, targetIndex, { fromAI: true });
+      } catch (error) {
+        console.error('AI evolution error:', error);
+      }
       render();
       await delay(700);
     }
@@ -2172,24 +2504,51 @@ async function aiTurn() {
     if (idx < 0) break;
     if (document.getElementById("aiStatus")) document.getElementById("aiStatus").textContent = "🟠 Invocando " + c.name + "...";
     setAIRealtime("Jugando " + c.name + "...");
-    const played = playCardForPlayer(2, idx, true);
-    if (!played) break;
+    let played = false;
+    try {
+      played = playCardForPlayer(2, idx, true);
+    } catch (error) {
+      console.error('AI card play error:', error);
+      // Carta incompatible: se descarta de este plan y se intenta otra sin aviso visual.
+      // Remove the failing choice from this planning pass so the loop cannot
+      // get stuck repeatedly selecting the same card.
+      choices = choices.filter(card => card !== c);
+      continue;
+    }
+    if (!played) {
+      choices = choices.filter(card => card !== c);
+      continue;
+    }
     plays++;
     render();
     await delay(800);
     choices = aiHand.filter(c => c.cost <= p2DonReserve.length);
   }
 
-  GLTCG.ai.attachDon(aiPolicy);
+  try {
+    GLTCG.ai.attachDon(aiPolicy);
+  } catch (error) {
+    console.error('AI DON attachment error:', error);
+  }
   p2Field.forEach((unit, index) => {
-    if (unit.active && !unit.used) activateUnitAbility(index, 2, true);
+    if (!unit.active || unit.used) return;
+    try {
+      activateUnitAbility(index, 2, true);
+    } catch (error) {
+      console.error('AI ability error:', error);
+      // Habilidad incompatible: se marca como usada y se continúa.
+      if (p2Field[index]) p2Field[index].used = true;
+    }
   });
   
   const readyAttackers = p2Field.filter(u => !u.summoningSickness && !u.hasAttacked);
   let attacks = 0;
   for (let attacker of readyAttackers) {
     if (gameOver || attacks >= aiPolicy.maxAttacks) break;
-    attacker.hasAttacked = true;
+    try {
+      if (!attacker || !p2Field.includes(attacker)) continue;
+      attacker.hasAttacked = true;
+    battleStats.attacksMade++;
     attacks++;
     addCombo(2, 1);
     if (aiLeader?.id === 'C41' && comboHas(2, 2) && !collisionLeaderUsedP2) {
@@ -2209,7 +2568,12 @@ async function aiTurn() {
     
     if (!GLTCG.rules.canAttackLeaderThroughField({ canAttackLeader: canAttackLeader }, p1Field)) {
       let targetIdx = GLTCG.ai.chooseTarget(attacker, aiPolicy);
+      if (targetIdx < 0 || targetIdx >= p1Field.length) {
+        log('🤖 IA: no encontró un objetivo legal; conserva este ataque.');
+        continue;
+      }
       let target = p1Field[targetIdx];
+      if (!target) continue;
       let tPower = totalPower(target);
       
       log('⚔️ IA: ' + attacker.name + ' (' + power + ') ataca a tu ' + target.name + ' (' + tPower + ').');
@@ -2250,6 +2614,24 @@ async function aiTurn() {
     checkWin();
     render();
     await delay(700);
+    } catch (error) {
+      console.error('AI attack error:', error);
+      // No abortar todo el turno por un atacante concreto.
+      continue;
+    }
+  }
+
+  // La IA también usa a su Líder: si el campo está despejado, presiona directamente.
+  if (!gameOver && p1Field.length === 0 && !window._preventLeaderDamageP2 && p2LeaderDon >= 0) {
+    battleStats.attacksMade++;
+    battleStats.leaderAttacks++;
+    log('👑 IA: su Líder ' + (aiLeader?.name || 'rival') + ' ataca directamente.');
+    if (p1shield > 0) { p1shield--; log('🛡️ Tu escudo absorbió el ataque del Líder de la IA.'); }
+    else if (p1hp <= 0 && tryRabbitHole(1)) { log('🐇 RABBIT HOLE: evitaste el golpe final del Líder de la IA.'); }
+    else { p1hp = Math.max(0, p1hp - 1); log('💥 El Líder de la IA te hizo 1 ❤️ de daño.'); }
+    checkWin();
+    render();
+    await delay(700);
   }
   
   checkWin();
@@ -2275,16 +2657,30 @@ async function aiTurn() {
     lastResolvedAbility = null;
     active = 1;
     turn++;
-    p1max = Math.min(10, p1max + 1);
+    p1max += 2;
     drawP1();
-    drawDon(1);
+    drawDon(1, 2);
     p1don = p1DonReserve.length;
     if (document.getElementById("aiStatus")) document.getElementById("aiStatus").textContent = "🟢 Esperando";
     log("🔄 Comienza tu turno: robaste 1 carta y 1 DON. Personajes listos.");
   }
   } catch (error) {
     console.error('Error durante el turno de la IA:', error);
-    log('⚠️ La IA tuvo un problema y el turno se ha detenido de forma segura.');
+    // Último cortafuegos: nunca dejes al jugador atrapado en el turno de la IA.
+    // El detalle queda en consola para depuración y no ensucia el registro de batalla.
+    if (!gameOver) {
+      p1Field.forEach(GLTCG.rules.resetUnitForTurn);
+      p2Field.forEach(GLTCG.rules.resetUnitForTurn);
+      cantoUsedP2 = false; cantoModifierP2 = 0; cantoTurnHistoryP2 = [];
+      evolutionUsedThisTurnP2 = false; evolutionNextBoostP2 = false;
+      active = 1;
+      turn++;
+      p1max += 2;
+      drawP1();
+      drawDon(1, 2);
+      p1don = p1DonReserve.length;
+      log('🔄 Comienza tu turno.');
+    }
   } finally {
     aiBusy = false;
     render();
@@ -2305,10 +2701,10 @@ function endTurn() {
       lastResolvedAbility = null;
       p2Field.forEach(GLTCG.rules.resetUnitForTurn);
       log("🔄 Turno de PLAYER 2.");
+      p2max += 2;
       drawP2();
-      drawDon(2);
+      drawDon(2, 2);
       p2don = p2DonReserve.length;
-      p2max = Math.min(10, p2max + 1);
     } else {
       active = 1;
       comboP2 = 0;
@@ -2319,10 +2715,10 @@ function endTurn() {
       lastResolvedAbility = null;
       p1Field.forEach(GLTCG.rules.resetUnitForTurn);
       log("🔄 Turno de PLAYER 1.");
+      p1max += 2;
       drawP1();
-      drawDon(1);
+      drawDon(1, 2);
       p1don = p1DonReserve.length;
-      p1max = Math.min(10, p1max + 1);
     }
     render();
     return;
@@ -2370,13 +2766,13 @@ function reset() {
   resolvingRepeatedAbility = false;
   
   p1Deck = makeDeck();
-  p2Deck = makeDeck();
+  p2Deck = (tournamentState.active && tournamentCurrentOpponent?.deck?.length) ? tournamentCurrentOpponent.deck.slice() : makeAIDeck();
   hand = []; aiHand = []; p1Field = []; p2Field = []; p1Grave = []; p2Grave = [];
   p1DonDeck = makeDonDeck(); p2DonDeck = makeDonDeck();
   p1DonReserve = []; p2DonReserve = [];
   
   p1hp = 5; p2hp = 5; p1shield = 3; p2shield = 3;
-  p1max = 3; p2max = 2; p1don = 0; p2don = 0;
+  p1max = 5; p2max = 5; p1don = 0; p2don = 0;
   p1leaderDon = 0; p2leaderDon = 0;
   active = 1; turn = 1; gameOver = false; aiBusy = false; boost = 0; p2Boost = 0;
   resetBattleStats();
@@ -2385,7 +2781,7 @@ function reset() {
   rabbitHoleUsed = false;
   
   for (let i = 0; i < 5; i++) { drawP1(); drawP2(); }
-  for (let i = 0; i < 3; i++) { drawDon(1); drawDon(2); }
+  for (let i = 0; i < 5; i++) { drawDon(1); drawDon(2); }
   if (document.getElementById("log")) document.getElementById("log").innerHTML = "";
   log("🏴‍☠️ ¡Nueva partida iniciada!");
   render();
@@ -2839,6 +3235,19 @@ function showSoloPostGame(result) {
   animateSoloCounter("soloStatKills", battleStats.unitsDefeated, 700);
   animateSoloCounter("soloStatDon", battleStats.donAttached, 700);
   animateSoloCounter("soloStatTurns", battleStats.turns, 600);
+
+  const historyBox = document.getElementById('soloBattleHistory');
+  if (historyBox) {
+    historyBox.innerHTML = '';
+    const events = battleEventHistory.filter(e => e.type === 'LOG' && e.message);
+    if (!events.length) historyBox.innerHTML = '<div class="solo-history-entry">Sin eventos registrados.</div>';
+    else events.slice().reverse().forEach((e, i) => {
+      const row = document.createElement('div');
+      row.className = 'solo-history-entry';
+      row.textContent = '[' + String(e.turn || '?') + '] ' + e.message;
+      historyBox.appendChild(row);
+    });
+  }
   
   // 7. Abrir Modal
   modal.classList.add("open");
@@ -2858,6 +3267,7 @@ function claimSoloRewardsAndOpenPacks() {
 
 function retrySoloBattle() {
   closeSoloPostGame();
+  if (tournamentState.active) { startTournamentMatch(); return; }
   reset();
 }
 
@@ -2904,6 +3314,12 @@ document.addEventListener('keydown', (e) => {
     const leaderModal = document.getElementById('leaderModal');
     if (leaderModal && leaderModal.classList.contains('open')) {
       closeLeaderModal();
+      return;
+    }
+    const tournamentModal = document.getElementById('tournamentModal');
+    if (tournamentModal && tournamentModal.classList.contains('open')) {
+      closeTournamentModal();
+      openMainMenu();
       return;
     }
     const localModal = document.getElementById('localModeModal');

@@ -1,7 +1,7 @@
 {
   "game": "Grand Legends TCG",
-  "version": "6.3.3",
+  "version": "6.8.1",
   "channel": "web-phase-1",
   "status": "public-static",
-  "message": "Primera versión web pública. Online sigue desactivado."
+  "message": "DON infinito con +2 por turno y IA más estable sin mensajes de reajuste."
 }

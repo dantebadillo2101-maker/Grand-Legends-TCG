@@ -8,6 +8,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 .btn-leader-canto{margin-top:8px;border:1px solid #d9a7ff;background:linear-gradient(135deg,#4a185f,#17132b);color:#fff;padding:7px 10px;border-radius:9px;cursor:pointer;font-weight:700;box-shadow:0 0 12px #8c4cff44}.btn-leader-canto:hover:not(:disabled){filter:brightness(1.15);transform:translateY(-1px)}.btn-leader-canto:disabled{opacity:.45;cursor:not-allowed}
+
+/* TORNEO VS IA */
+.tournament-modalbox{max-width:760px}
+.tournament-difficulty-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.tournament-difficulty{border:2px solid #50617d;border-radius:15px;background:#101a2d;color:#fff;padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:7px;transition:.2s}
+.tournament-difficulty:hover,.tournament-difficulty.selected{border-color:#ffd65d;transform:translateY(-2px);box-shadow:0 8px 20px #0005}
+.tournament-difficulty span{font-size:.8rem;opacity:.75}
+.tournament-bracket{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:18px 0;max-height:360px;overflow:auto}
+.tournament-progress{grid-column:1/-1;border:2px solid #d8a63f;border-radius:14px;padding:12px;background:#20190d;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tournament-opponent{border:1px solid #334766;border-radius:12px;background:#0d1627;padding:10px;text-align:left;display:flex;align-items:center;gap:8px}
+.tournament-opponent.current{border-color:#ffd65d;box-shadow:0 0 15px #ffd65d33}
+.tournament-opponent small{display:block;opacity:.7;margin-left:auto;text-align:right}
+.tournament-champion{grid-column:1/-1;border:2px solid #ffd65d;border-radius:18px;padding:30px;background:radial-gradient(circle,#35280d,#101725);display:flex;flex-direction:column;gap:10px;font-size:1.15rem}
+.tournament-champion strong{font-size:1.7rem;color:#ffd65d}
+.tournament-modal-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+@media(max-width:700px){.tournament-difficulty-grid,.tournament-bracket{grid-template-columns:1fr}.tournament-progress{display:block}.tournament-opponent small{margin-left:0}}
+
 </style>
 </head>
 <body>
@@ -386,7 +403,15 @@
         <button type="button" class="btn-select-mode">⚔️ Jugar contra la IA</button>
       </div>
 
-      <!-- Opción 2: 2 Jugadores Local -->
+      <!-- Opción 2: Torneo VS IA -->
+      <div class="mode-card tournament-mode-card" onclick="startTournamentMode()">
+        <div class="mode-icon">🏆</div>
+        <h3>Torneo VS IA</h3>
+        <p>Supera varias rondas contra rivales de IA y llega hasta la Gran Final.</p>
+        <button type="button" class="btn-select-mode">🏆 Entrar al Torneo</button>
+      </div>
+
+      <!-- Opción 3: 2 Jugadores Local -->
       <div class="mode-card" onclick="startLocalPVP()">
         <div class="mode-icon">👥</div>
         <h3>2 Jugadores (PVP Local)</h3>
@@ -397,6 +422,26 @@
 
     <div class="modal-bottom-actions">
       <button type="button" class="btn-cancel" onclick="closeLocalMode();openMainMenu()">⬅️ Cancelar y Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     MODAL DE TORNEO VS IA
+     ========================================== -->
+<div class="modal" id="tournamentModal">
+  <div class="modalbox center tournament-modalbox">
+    <div class="modal-nav-bar">
+      <button type="button" class="btn-nav-back" onclick="closeTournamentModal();openLocalMode()">⬅️ Volver</button>
+      <button type="button" class="modal-close-icon" onclick="abandonTournament()">✕</button>
+    </div>
+    <h2 id="tournamentModalTitle">🏆 TORNEO VS IA</h2>
+    <p id="tournamentMessage" class="subtitle-text">Elige la dificultad del torneo. La IA mantendrá ese nivel durante todas las rondas.</p>
+    <div id="tournamentSetup" class="tournament-difficulty-grid"></div>
+    <div id="tournamentBracket" class="tournament-bracket" style="display:none"></div>
+    <div class="tournament-modal-actions">
+      <button type="button" class="btn-select-mode" id="tournamentNextBtn" onclick="startTournamentMatch()">⚔️ Siguiente Combate</button>
+      <button type="button" class="btn-cancel" onclick="abandonTournament()">🏠 Salir del Torneo</button>
     </div>
   </div>
 </div>
@@ -699,6 +744,11 @@
       </div>
     </div>
 
+    <div class="solo-battle-history-section">
+      <div class="solo-section-title">📜 REGISTRO COMPLETO DEL COMBATE</div>
+      <div id="soloBattleHistory" class="solo-battle-history" aria-live="polite"></div>
+    </div>
+
     <!-- Recompensas y Barra de EXP del Duelista -->
     <div class="solo-rewards-section">
       <div class="solo-section-title">🎁 RECOMPENSAS DEL DUELO</div>
@@ -763,6 +813,16 @@
       <span class="badge badge-gold" style="font-size:1rem; padding:6px 14px;">Mazo: <b id="deckCount">0</b> / 40 cartas</span>
     </div>
     <div id="deckValidationMessage" class="deck-validation" role="status">Mazo predeterminado disponible.</div>
+
+    <div class="deck-save-toolbar">
+      <button type="button" class="btn-primary-action" onclick="saveCurrentDeckAs()">💾 Guardar como nuevo mazo</button>
+      <button type="button" class="btn-head-action" onclick="overwriteActiveDeck()">🔄 Actualizar mazo cargado</button>
+      <button type="button" class="btn-head-action" onclick="useActiveDeck()">▶️ Usar este mazo</button>
+    </div>
+    <div class="saved-decks-panel">
+      <div class="saved-decks-title">📂 MIS MAZOS GUARDADOS</div>
+      <div id="savedDecksList" class="saved-decks-list"></div>
+    </div>
     
     <p>Construye tu baraja de 40 cartas. Máximo 4 copias de la misma carta.</p>
     

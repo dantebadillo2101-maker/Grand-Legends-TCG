@@ -2035,3 +2035,19 @@ button:disabled {
   border-color:#7c5cff !important;
   box-shadow:0 0 18px #5d43c833;
 }
+
+
+/* Sistema de mazos guardados */
+.deck-save-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;padding:10px;border:1px solid rgba(216,166,63,.35);border-radius:12px;background:rgba(0,0,0,.18)}
+.saved-decks-panel{margin:10px 0 14px;padding:12px;border:1px solid rgba(80,180,255,.25);border-radius:12px;background:rgba(0,0,0,.16)}
+.saved-decks-title{font-weight:800;margin-bottom:8px;color:#ffd86b}
+.saved-decks-list{display:grid;gap:8px}
+.saved-deck-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035)}
+.saved-deck-item.active{border-color:rgba(255,216,107,.7);box-shadow:0 0 12px rgba(255,216,107,.12)}
+.saved-deck-item small{display:block;opacity:.72;margin-top:3px}
+.saved-deck-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.saved-deck-empty{opacity:.7;padding:8px}
+.solo-battle-history-section{margin-top:14px}
+.solo-battle-history{max-height:300px;overflow:auto;padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(0,0,0,.22);font-family:monospace;font-size:.82rem;line-height:1.45}
+.solo-history-entry{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.solo-history-entry:last-child{border-bottom:0}

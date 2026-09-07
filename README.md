@@ -14,9 +14,7 @@ se estaran haciendo actualizaciones cada cierto tiempo ademas , en las cuales se
 - set 07 - LOS KOREANOS DEL FIN
 - VS IA
 - 2 jugadores local
-- modo torneo 
 - Deck Builder
-- creacion y guardado de mazos
 - Packs
 - Cuentas locales mediante localStorage
 - Online desactivado temporalmente
