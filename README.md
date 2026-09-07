@@ -21,6 +21,7 @@ se estaran haciendo actualizaciones cada cierto tiempo ademas , en las cuales se
 - Pruebas de reglas en `tests/rules.test.js`
 ##  TUTORIAL PARA JUGAR 
 [Tutorial oficial — Grand Legends TCG.pdf](https://github.com/user-attachments/files/31891259/Tutorial.oficial.Grand.Legends.TCG.pdf)
+
 TUTORIAL DE MECANICAS 
 [Grand_Legends_TCG_Guia_Oficial_Mecanicas_COMPLETA_Sets_01-07.docx](https://github.com/user-attachments/files/31928211/Grand_Legends_TCG_Guia_Oficial_Mecanicas_COMPLETA_Sets_01-07.docx)
 
