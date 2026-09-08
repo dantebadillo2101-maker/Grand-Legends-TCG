@@ -3277,6 +3277,19 @@ function exitSoloToMenu() {
 }
 
 /* ==========================================================================
+   EXPOSICIÓN EXPLÍCITA DE FUNCIONES USADAS POR onclick
+   ========================================================================== */
+// GitHub Pages/cachés pueden conservar una combinación antigua de index.html
+// y game.js. Estas asignaciones garantizan que los botones inline encuentren
+// las funciones del sistema de mazos en window.
+window.saveCurrentDeckAs = saveCurrentDeckAs;
+window.overwriteActiveDeck = overwriteActiveDeck;
+window.loadSavedDeck = loadSavedDeck;
+window.duplicateSavedDeck = duplicateSavedDeck;
+window.useActiveDeck = useActiveDeck;
+window.deleteSavedDeck = deleteSavedDeck;
+
+/* ==========================================================================
    EVENT LISTENERS Y ATADURAS GLOBALES
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
